@@ -141,24 +141,12 @@ export default function HeroSection() {
                 <ChevronRight className="w-5 h-5 text-white" />
               </span>
             </button>
-            <button className="text-slate-400 hover:text-slate-900 text-[0.95rem] font-semibold transition-colors duration-300 flex items-center gap-2">
-              Watch demo <PlayCircle className="w-5 h-5" />
+            <button className="group flex items-center gap-2 bg-teal-500 text-white px-6 py-2.5 rounded-full text-[0.95rem] font-bold hover:bg-teal-600 hover:shadow-2xl hover:shadow-teal-300 transition-all active:scale-95 ease-out duration-300">
+              Watch demo <PlayCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
             </button>
           </div>
 
-          {/* Stats */}
-          <div className="ht flex items-stretch gap-0 pt-10 mt-6 border-t border-slate-200/60">
-            {[
-              { val: '12k+', label: 'Active Drivers' },
-              { val: '4.9★', label: 'User Rating' },
-              { val: '98%', label: 'Compliance' },
-            ].map((s, i) => (
-              <div key={s.label} className={`flex flex-col pr-10 ${i > 0 ? 'pl-10 border-l border-slate-200/60' : ''}`}>
-                <span className="text-[1.8rem] font-black text-slate-900 leading-none tracking-tight">{s.val}</span>
-                <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">{s.label}</span>
-              </div>
-            ))}
-          </div>
+
         </div>
 
         {/* ── RIGHT: Map Card ─────────────────────────────────────── */}
