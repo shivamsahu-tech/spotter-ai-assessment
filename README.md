@@ -10,7 +10,9 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
 [![OpenRouteService](https://img.shields.io/badge/Routing-ORS-FF5733.svg)](https://openrouteservice.org/)
 
-[📸 View Screenshots](#-visual-logic--architecture) • [🚀 Quick Start](#-installation--setup) • [🏗️ Architecture](#-system-architecture)
+[Live Url](https://spotterai-assessment.vercel.app/) • 
+[Loom Video](https://spotterai-assessment.vercel.app/) • [🚀 Quick Start](#-installation--setup) • [🏗️ Architecture](#-system-architecture)
+
 
 ---
 
