@@ -1,18 +1,32 @@
-# Spotter AI: Technical Architecture & Design
+<div align="center">
 
-Spotter AI is an advanced ELD (Electronic Logging Device) trip planning platform that automates the generation of FMCSA-compliant logbooks. By bridging geographic interpolation with a custom Hours of Service (HOS) state machine, the system translates raw routing data into pixel-perfect, legally compliant daily logs.
+# 🚚 Spotter AI
+
+### *Automated FMCSA-Compliant ELD Logbook Generation & Geographic Interpolation*
 
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-black?logo=github)](https://github.com/shivamsahu-tech/spotter-ai-assessment)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Django](https://img.shields.io/badge/Django-6.0-092E20.svg)](https://www.djangoproject.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
+[![OpenRouteService](https://img.shields.io/badge/Routing-ORS-FF5733.svg)](https://openrouteservice.org/)
+
+[📸 View Screenshots](#-visual-logic--architecture) • [🚀 Quick Start](#-installation--setup) • [🏗️ Architecture](#-system-architecture)
+
+---
+
+**An advanced logistics engine that bridges real-world routing data with a strict Hours of Service (HOS) state machine to render pixel-perfect daily logs.**
+
+</div>
 
 ---
 
 ## ✨ Key Features
-* **FMCSA-Compliant HOS Engine:** A highly optimized state machine that handles 11-hour driving limits, 14-hour consecutive duty windows, 70-hour cycle limits, and mandatory overlapping rest breaks.
+* **FMCSA-Compliant HOS Engine:** A highly optimized state machine that dynamically calculates 11-hour driving limits, 14-hour consecutive duty windows, 70-hour cycle limits, and mandatory overlapping rest breaks.
 * **Heavy Goods Vehicle (HGV) Routing:** Integrates with OpenRouteService to calculate real-world truck routes, avoiding low bridges and weight-restricted roads.
 * **Kinematic Geographic Interpolation:** Uses the Haversine formula to pinpoint exact longitude/latitude coordinates for every stationary event (rest, sleep, load) along a 5,000+ point route array.
 * **Dynamic Midnight Splitter:** Automatically slices multi-day trip events at the 24:00 boundary to generate distinct calendar-day log sheets.
-* **High-Fidelity SVG Graphing:** Renders crisp, responsive ELD graphs purely through React and scalable vector graphics, bypassing clunky static background images.
-* **Interactive UI:** Powered by Next.js, React, and GSAP for staggered animations and a premium fintech-tier user experience.
+* **High-Fidelity SVG Graphing:** Renders crisp, responsive ELD graphs purely through React and scalable vector graphics, completely bypassing clunky static background images.
+* **Interactive UI:** Powered by Next.js, React, and GSAP for staggered animations and a premium user experience.
 
 ---
 
@@ -41,9 +55,9 @@ The system operates on a sophisticated five-stage pipeline that transforms raw g
 * **Advancement**: The simulation jumps to the earliest of these events, logs the status change, safely handles negative-clock edge cases for loading tasks, updates all internal timers, and iterates until final delivery.
 
 ### 3. Kinematic GPS Pinning (`geo_utils.py`)
-* **Problem**: HOS logs are temporal (Time $\rightarrow$ Status), but ELD compliance requires spatial data (Status $\rightarrow$ Location).
+* **Problem**: HOS logs are temporal (Time -> Status), but ELD compliance requires spatial data (Status -> Location).
 * **Algorithm**: Kinematic Linear Interpolation.
-* **Execution**: The system traverses the route geometry while tracking a virtual odometer. When a status change occurs at time $T$, the algorithm calculates distance $D$, finds the precise geometric segment, and uses the Haversine formula to interpolate the exact $X, Y$ coordinate of the truck's location.
+* **Execution**: The system traverses the route geometry while tracking a virtual odometer. When a status change occurs at time *T*, the algorithm calculates distance *D*, finds the precise geometric segment, and uses the Haversine formula to interpolate the exact $X, Y$ coordinate of the truck's location.
 
 ### 4. Temporal Adapter (The "Midnight Splitter")
 * **Logic**: FMCSA log sheets must be rigid 24-hour grids. 
@@ -51,7 +65,7 @@ The system operates on a sophisticated five-stage pipeline that transforms raw g
 
 ### 5. Matrix Rendering & Geocoding (`logbook_pdf.py`)
 * **Geocoding Optimizer**: Uses an $O(1)$ spatial cache rounded to 2 decimal places to maximize cache hits on repeated stops during Reverse Geocoding via Nominatim.
-* **Vector Synthesis**: Maps the 24-hour timeline onto a pixel-mapped coordinate system ($X_{min}=254, X_{max}=1817$) to draw status lines. 
+* **Vector Synthesis**: Maps the 24-hour timeline onto a pixel-mapped coordinate system to draw status lines. 
 * **Visual Engineering**: Renders labels with deliberate structural orientation, ensuring visual markers drop down into the remarks area rather than pointing up into the grid for maximum regulatory readability.
 
 ---
@@ -59,19 +73,19 @@ The system operates on a sophisticated five-stage pipeline that transforms raw g
 ## 📊 Visual Logic & Architecture
 
 ### 🛠️ System Logic
-Sequence diagrams and logical flow of the HOS simulation.
+<img src="https://drive.google.com/uc?export=view&id=1pEgLKufOPr_uVXw0u3OIGlmYi25yscpm" width="800" alt="System Logic Sequence Diagrams">
 
-![System Logic](https://drive.google.com/uc?export=view&id=1pEgLKufOPr_uVXw0u3OIGlmYi25yscpm)
+*Deep dive into the sequence diagrams and logical flow of the HOS simulation*
 
 ### 🗺️ Map Visualization & Results
-High-fidelity route rendering with interpolated status overlays.
+<img src="https://drive.google.com/uc?export=view&id=13no_5x5FVMVIRUQKIdCX_4vxu1fYgL73" width="800" alt="Route Rendering with Overlays">
 
-![Map Result](https://drive.google.com/uc?export=view&id=13no_5x5FVMVIRUQKIdCX_4vxu1fYgL73)
+*High-fidelity route rendering with interpolated status overlays*
 
 ### 📝 HOS Logbook Output
-Example of the final generated FMCSA ELD logbook.
+<img src="https://drive.google.com/uc?export=view&id=1GizhJswZQYIzzrBAkdYCaRWAfzFMJmgt" width="800" alt="Generated FMCSA Logbook">
 
-![HOS Log](https://drive.google.com/uc?export=view&id=1GizhJswZQYIzzrBAkdYCaRWAfzFMJmgt)
+*Example of the final generated FMCSA ELD logbook*
 
 ---
 
@@ -91,7 +105,6 @@ Example of the final generated FMCSA ELD logbook.
 You will need an API key from OpenRouteService. Place it in a `.env` file in the `server` directory:
 ```env
 ORS_API_KEY=your_api_key_here
-## 📦 Installation & Setup
 
 ### 1. Backend Setup
 ```bash
