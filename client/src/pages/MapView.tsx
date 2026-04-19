@@ -28,19 +28,35 @@ function buildIcon(
   status: string,
   isFirst = false,
   isLast = false,
-  isCurrentLoc = false
+  isCurrentLoc = false,
+  reason = ''
 ): L.DivIcon {
   const meta = STATUS_META[isCurrentLoc ? 'current' : status] ?? STATUS_META['Off Duty']
   const color = meta.color
 
-  // Icon emoji/letter
-  const innerSvg = isCurrentLoc
-    ? `<circle cx="12" cy="12" r="6" fill="white" opacity="0.9"/>`
-    : isLast
-    ? `<path d="M12 7 L15 13 H9 Z" fill="white"/>`  // flag / destination triangle
-    : isFirst
-    ? `<rect x="8" y="8" width="8" height="8" rx="2" fill="white"/>`
-    : ''
+  // Icon SVG paths (simplified Lucide-like)
+  const ICONS: Record<string, string> = {
+    truck: `<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9V4"/><path d="M19 18h2a1 1 0 0 0 1-1v-5l-4-4h-3v10"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>`,
+    bed: `<path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><circle cx="7" cy="10" r="2"/>`,
+    fuel: `<path d="m3 22 12 0"/><path d="M4 9h10"/><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"/><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2a2 2 0 0 0 2-2V7"/><path d="M10 7H6"/>`,
+    package: `<path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/>`,
+    coffee: `<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><path d="M6 2v2"/><path d="M10 2v2"/><path d="M14 2v2"/>`,
+    destination: `<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>`
+  }
+
+  let selectedIcon = ICONS.truck // default
+  const lowerReason = reason?.toLowerCase() || ''
+  
+  if (status === 'Sleeper Berth') selectedIcon = ICONS.bed
+  if (lowerReason.includes('fuel')) selectedIcon = ICONS.fuel
+  if (lowerReason.includes('loading') || lowerReason.includes('unloading')) selectedIcon = ICONS.package
+  if (lowerReason.includes('break') || status === 'Off Duty') selectedIcon = ICONS.coffee
+  if (isLast) selectedIcon = ICONS.destination
+  if (isFirst || isCurrentLoc) selectedIcon = ICONS.truck
+
+  // Icon emoji/letter inner SVG
+  // Increased stroke-width to 3 and scale to 0.8 for "impressive" look
+  const innerSvg = `<g transform="translate(10, 9) scale(0.85)" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">${selectedIcon}</g>`
 
   // Ring pulse for current location
   const ring = isCurrentLoc
@@ -49,30 +65,25 @@ function buildIcon(
     : ''
 
   // Pin shape: circle head + triangle tip
-  const pinSize = isFirst || isLast ? 44 : 38
+  const pinSize = 40
   const cx = pinSize / 2
-  const r = isFirst || isLast ? 14 : 11
-  const tipY = cx + r + 6
-  // The total SVG height needs to accommodate pin head + tip
+  const r = 15
+  const tipY = cx + r + 4
   const svgH = tipY + 2
 
   const svgStr = `
     <svg xmlns="http://www.w3.org/2000/svg" width="${pinSize}" height="${svgH}" viewBox="0 0 ${pinSize} ${svgH}">
       ${ring}
-      <!-- Drop shadow filter -->
       <defs>
         <filter id="sh" x="-40%" y="-40%" width="180%" height="180%">
           <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="${color}" flood-opacity="0.35"/>
         </filter>
       </defs>
-      <!-- Circle head -->
+      <!-- Circle head (Center: 20, 19) -->
       <circle cx="${cx}" cy="${r + 4}" r="${r}" fill="${color}" filter="url(#sh)" />
-      <!-- Tip triangle -->
       <polygon points="${cx},${tipY} ${cx - 5},${cx - 2} ${cx + 5},${cx - 2}" fill="${color}" />
-      <!-- Border ring -->
-      <circle cx="${cx}" cy="${r + 4}" r="${r - 3}" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-      <!-- Inner icon placeholder -->
-      <g transform="translate(${cx - 12}, ${r - 8})" fill="white">${innerSvg}</g>
+      <circle cx="${cx}" cy="${r + 4}" r="${r - 3}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+      ${innerSvg}
     </svg>
   `
 
@@ -80,8 +91,8 @@ function buildIcon(
     html: svgStr,
     className: '',
     iconSize: [pinSize, svgH],
-    iconAnchor: [pinSize / 2, svgH],   // anchor at the very tip
-    tooltipAnchor: [pinSize / 2, -(svgH)],
+    iconAnchor: [pinSize / 2, svgH],
+    tooltipAnchor: [0, -svgH/2],
   })
 }
 
@@ -178,11 +189,6 @@ export default function MapView() {
       {/* ── Body ── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Sidebar */}
-        <aside className="w-80 flex-shrink-0 overflow-y-auto border-r border-slate-200/80 bg-white/70 backdrop-blur-sm">
-          <LogTimeline logs={trip_logs} />
-        </aside>
-
         {/* Map */}
         <div className="flex-1 relative">
           <MapContainer center={[39.5, -98.35]} zoom={5} style={{ width: '100%', height: '100%' }}>
@@ -209,17 +215,18 @@ export default function MapView() {
             {stops.map((stop: any, i: number) => {
               const isFirst = i === 0
               const isLast  = i === stops.length - 1
-              const meta    = STATUS_META[stop.status] ?? STATUS_META['Off Duty']
+              // Force 'current' meta for the first point (Current Location)
+              const meta    = isFirst ? STATUS_META['current'] : (STATUS_META[stop.status] ?? STATUS_META['Off Duty'])
               const pos: [number, number] = [stop.coordinate[1], stop.coordinate[0]]
 
               return (
                 <Marker
                   key={i}
                   position={pos}
-                  icon={buildIcon(stop.status, isFirst, isLast)}
+                  icon={buildIcon(stop.status, isFirst, isLast, isFirst, stop.reason)}
                 >
                   <Tooltip
-                    permanent={isFirst || isLast}
+                    permanent={false}
                     direction="top"
                     offset={[0, -4]}
                     opacity={1}
@@ -242,11 +249,21 @@ export default function MapView() {
                           background: meta.color, flexShrink: 0,
                         }} />
                         <span style={{ fontWeight: 700, fontSize: 12, color: '#0f172a' }}>
-                          {isFirst ? '🚛 Current Location' : isLast ? '📍 Destination' : meta.label}
+                          {(() => {
+                            const lowerReason = (stop.reason || '').toLowerCase();
+                            let icon = '🚛';
+                            if (stop.status === 'Sleeper Berth') icon = '🛌';
+                            else if (lowerReason.includes('fuel')) icon = '⛽';
+                            else if (lowerReason.includes('loading')) icon = '📦';
+                            else if (lowerReason.includes('break') || stop.status === 'Off Duty') icon = '☕';
+                            
+                            const prefix = isFirst ? 'Start: ' : isLast ? 'End: ' : '';
+                            return `${icon} ${prefix}${meta.label}`;
+                          })()}
                         </span>
                       </div>
                       {stop.reason && (
-                        <p style={{ fontSize: 11, color: '#64748b', margin: '0 0 5px' }}>{stop.reason}</p>
+                        <p style={{ fontSize: 11, color: '#64748b', margin: '0 0 5px', fontWeight: 600 }}>{stop.reason}</p>
                       )}
                       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                         <StatBit label="Duration" value={fmtHrs(stop.duration_hours)} />
@@ -278,6 +295,11 @@ export default function MapView() {
             ))}
           </div>
         </div>
+
+        {/* Sidebar */}
+        <aside className="w-80 flex-shrink-0 overflow-y-auto border-l border-slate-200/80 bg-white/70 backdrop-blur-sm">
+          <LogTimeline logs={trip_logs} />
+        </aside>
       </div>
 
       {showEldModal && (
