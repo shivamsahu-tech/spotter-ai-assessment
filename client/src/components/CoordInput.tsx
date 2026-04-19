@@ -16,25 +16,35 @@ const DefaultIcon = L.icon({
 })
 L.Marker.prototype.options.icon = DefaultIcon
 
-const COLOR_CLASSES: any = {
+const COLOR_CLASSES = {
   teal: {
     label: 'text-teal-900',
-    border: 'border-teal-200/50 bg-teal-50/40 focus-within:border-teal-400 focus-within:bg-white/80 focus-within:shadow-lg focus-within:shadow-teal-100/50',
+    border: 'border-teal-200/50 bg-teal-50/40 focus-within:border-teal-400 focus-within:bg-white/80',
     badge: 'bg-teal-500 text-white border-teal-600',
     btn: 'text-white bg-teal-500 hover:bg-teal-600 shadow-sm',
     icon: 'text-teal-600',
   },
   slate: {
     label: 'text-slate-900',
-    border: 'border-slate-200/50 bg-slate-50/40 hover:bg-slate-100/60 focus-within:border-teal-400 focus-within:bg-white/80 focus-within:shadow-lg focus-within:shadow-teal-100/50',
+    border: 'border-slate-200/50 bg-slate-50/40 hover:bg-slate-100/60 focus-within:border-teal-400 focus-within:bg-white/80',
     badge: 'bg-slate-800 text-white border-slate-900',
-    btn: 'text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm',
+    btn: 'text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 shadow-sm',
     icon: 'text-slate-500',
   },
 }
 
-// Helper component to fly to a location
-function MapRecenter({ lat, lng, zoom }: any) {
+// Helper to fix the "Grey Tiles" issue by forcing a resize after mount
+function MapResizer() {
+  const map = useMap()
+  useEffect(() => {
+    setTimeout(() => {
+      map.invalidateSize()
+    }, 200)
+  }, [map])
+  return null
+}
+
+function MapRecenter({ lat, lng, zoom }) {
   const map = useMap()
   useEffect(() => {
     if (lat !== null && lng !== null) {
@@ -44,25 +54,10 @@ function MapRecenter({ lat, lng, zoom }: any) {
   return null
 }
 
-function LocationPicker({ initialValue, onSelect, onClose, title }: any) {
+function LocationPicker({ initialValue, onSelect, onClose, title }) {
   const [marker, setMarker] = useState(initialValue ? [initialValue[1], initialValue[0]] : null)
-  const [centerMapCoords, setCenterMapCoords] = useState(initialValue ? [initialValue[1], initialValue[0]] : [20, 0])
-  const [mapZoom, setMapZoom] = useState(initialValue ? 14 : 2)
-
-  useEffect(() => {
-    if (!initialValue && 'geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCenterMapCoords([position.coords.latitude, position.coords.longitude])
-          setMapZoom(13)
-        },
-        (error) => {
-          console.log('Location access denied or failed, staying at world view')
-        },
-        { enableHighAccuracy: true }
-      )
-    }
-  }, [initialValue])
+  const [centerMapCoords, setCenterMapCoords] = useState(initialValue ? [initialValue[1], initialValue[0]] : [39.82, -98.57])
+  const [mapZoom, setMapZoom] = useState(initialValue ? 14 : 4)
 
   function ClickHandler() {
     useMapEvents({
@@ -85,9 +80,9 @@ function LocationPicker({ initialValue, onSelect, onClose, title }: any) {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-sky-900/20 border-black backdrop-blur-[2px] p-4 sm:p-6">
-      <div className="bg-white rounded-[2rem] overflow-hidden w-full max-w-4xl shadow-2xl flex flex-col">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6">
+      <div className="bg-white rounded-[2rem] overflow-hidden w-full max-w-4xl shadow-2xl flex flex-col relative">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white">
           <div className="flex items-center gap-3">
             <div className="bg-slate-100 p-2 rounded-full">
               <MapPin className="w-5 h-5 text-slate-700" />
@@ -102,38 +97,37 @@ function LocationPicker({ initialValue, onSelect, onClose, title }: any) {
         </div>
 
         <div className="h-[60vh] min-h-[400px] relative w-full bg-slate-50">
-          <MapContainer center={centerMapCoords as any} zoom={mapZoom} style={{ width: '100%', height: '100%' }}>
+          <MapContainer center={centerMapCoords} zoom={mapZoom} style={{ width: '100%', height: '100%' }}>
             <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              attribution='&copy; OpenStreetMap'
             />
+            <MapResizer />
             <ClickHandler />
             <MapRecenter lat={centerMapCoords[0]} lng={centerMapCoords[1]} zoom={mapZoom} />
-            {marker && <Marker position={marker as any} />}
+            {marker && <Marker position={marker} />}
           </MapContainer>
 
           <button 
+            type="button"
             onClick={handleLocateMe}
-            className="absolute bottom-6 right-6 z-[400] bg-white p-3 rounded-2xl shadow-lg border border-slate-100 text-slate-700 hover:text-teal-600 hover:border-teal-200 transition-all font-bold"
-            title="Locate Me"
+            className="absolute bottom-6 right-6 z-[1001] bg-white p-3 rounded-2xl shadow-lg border border-slate-100 text-slate-700 hover:text-teal-600 transition-all"
           >
             <Navigation className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="px-6 py-5 flex items-center justify-between gap-4 border-t border-slate-100 bg-slate-50">
-          <span className="text-sm font-medium text-slate-500 font-mono bg-white px-3 py-1.5 rounded-lg border border-slate-200">
-            {marker
-              ? `${(marker as any)[0].toFixed(5)}, ${(marker as any)[1].toFixed(5)}`
-              : 'Click on the map to drop a pin'}
+        <div className="px-6 py-5 flex items-center justify-between gap-4 border-t border-slate-100 bg-white">
+          <span className="text-sm font-medium text-slate-500 font-mono bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+            {marker ? `${marker[0].toFixed(5)}, ${marker[1].toFixed(5)}` : 'Click on the map to drop a pin'}
           </span>
           <button
             disabled={!marker}
             onClick={() => {
-              onSelect([(marker as any)[1], (marker as any)[0]])
+              onSelect([marker[1], marker[0]])
               onClose()
             }}
-            className="px-8 py-3.5 rounded-2xl text-sm font-bold bg-[#0a1120] hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-all shadow-md"
+            className="px-8 py-3.5 rounded-2xl text-sm font-bold bg-[#0a1120] hover:bg-slate-800 disabled:opacity-40 text-white transition-all shadow-md"
           >
             Confirm Pin
           </button>
@@ -143,7 +137,7 @@ function LocationPicker({ initialValue, onSelect, onClose, title }: any) {
   )
 }
 
-export default function CoordInput({ label, color = 'slate', value, onChange }: any) {
+export default function CoordInput({ label, color = 'slate', value, onChange }) {
   const c = COLOR_CLASSES[color] || COLOR_CLASSES.slate
   const [showPicker, setShowPicker] = useState(false)
   const [rawLng, setRawLng] = useState('')
@@ -157,11 +151,8 @@ export default function CoordInput({ label, color = 'slate', value, onChange }: 
   }, [value])
 
   const applyManual = () => {
-    const lng = parseFloat(rawLng)
-    const lat = parseFloat(rawLat)
-    if (!isNaN(lng) && !isNaN(lat)) {
-      onChange([lng, lat])
-    }
+    const lng = parseFloat(rawLng); const lat = parseFloat(rawLat)
+    if (!isNaN(lng) && !isNaN(lat)) onChange([lng, lat])
   }
 
   return (
@@ -181,46 +172,16 @@ export default function CoordInput({ label, color = 'slate', value, onChange }: 
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 flex gap-2">
-            <input
-              type="number"
-              placeholder="Longitude"
-              value={rawLng}
-              onChange={(e) => setRawLng(e.target.value)}
-              onBlur={applyManual}
-              step="0.0001"
-              className="flex-1 min-w-0 bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-800 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all shadow-sm"
-            />
-            <input
-              type="number"
-              placeholder="Latitude"
-              value={rawLat}
-              onChange={(e) => setRawLat(e.target.value)}
-              onBlur={applyManual}
-              step="0.0001"
-              className="flex-1 min-w-0 bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-800 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all shadow-sm"
-            />
+            <input type="number" placeholder="Longitude" value={rawLng} onChange={(e) => setRawLng(e.target.value)} onBlur={applyManual} step="0.0001" className="flex-1 min-w-0 bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm" />
+            <input type="number" placeholder="Latitude" value={rawLat} onChange={(e) => setRawLat(e.target.value)} onBlur={applyManual} step="0.0001" className="flex-1 min-w-0 bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm" />
           </div>
-          <button
-            type="button"
-            onClick={() => setShowPicker(true)}
-            className={`flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold whitespace-nowrap transition-colors shadow-sm ${c.btn}`}
-          >
-            <MapPin className="w-4 h-4" />
-            Pick on Map
+          <button type="button" onClick={() => setShowPicker(true)} className={`flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition-colors shadow-sm ${c.btn}`}>
+            <MapPin className="w-4 h-4" /> Pick on Map
           </button>
         </div>
       </div>
 
-      {showPicker && (
-        <LocationPicker
-          initialValue={value}
-          title={label}
-          onSelect={(coords: any) => {
-            onChange(coords)
-          }}
-          onClose={() => setShowPicker(false)}
-        />
-      )}
+      {showPicker && <LocationPicker initialValue={value} title={label} onSelect={onChange} onClose={() => setShowPicker(false)} />}
     </>
   )
 }

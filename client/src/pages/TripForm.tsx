@@ -26,7 +26,7 @@ export default function TripForm() {
         (position) => {
           setCurrCoords([position.coords.longitude, position.coords.latitude])
         },
-        (err) => console.log('Location access denied or failed:', err),
+        null,
         { enableHighAccuracy: true }
       )
     }
@@ -38,14 +38,13 @@ export default function TripForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
-
     if (!currCoords || !pickupCoords || !dropoffCoords) {
       setError('Please set all three locations before submitting.')
       return
     }
 
     setLoading(true)
+    setError('')
     try {
       const serverApi = import.meta.env.VITE_SERVER_API || ''
       const res = await fetch(`${serverApi}/api/calculate-trip/`, {
@@ -83,118 +82,57 @@ export default function TripForm() {
               Spotter AI
             </h1>
           </div>
-          <p className="text-slate-500 text-lg font-medium">ELD Trip Planner & Hours of Service Calculator</p>
+          <p className="text-slate-500 text-lg font-medium">ELD Trip Planner & HOS Calculator</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           
-          {/* Card 1: Locations */}
-          <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-10 shadow-2xl shadow-slate-200/40 border border-white/80 transition-all">
-            <div className="flex items-center gap-4 mb-8 pb-5 border-b border-slate-200/50">
-              <div className="bg-slate-100/50 p-2.5 rounded-2xl">
+          {/* Card 1: Waypoints */}
+          <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 shadow-xl border border-slate-100">
+            <div className="flex items-center gap-4 mb-8 pb-5 border-b border-slate-100">
+              <div className="bg-slate-100 p-2.5 rounded-2xl">
                 <MapIcon className="w-6 h-6 text-slate-700" />
               </div>
               <h2 className="text-2xl font-bold text-slate-800">Route Waypoints</h2>
             </div>
             
             <div className="space-y-6">
-              <CoordInput
-                label="Current Location"
-                color="teal"
-                value={currCoords}
-                onChange={setCurrCoords}
-              />
-              <CoordInput
-                label="Pickup Location"
-                color="slate"
-                value={pickupCoords}
-                onChange={setPickupCoords}
-              />
-              <CoordInput
-                label="Dropoff Location"
-                color="slate"
-                value={dropoffCoords}
-                onChange={setDropoffCoords}
-              />
+              <CoordInput label="Current Location" color="teal" value={currCoords} onChange={setCurrCoords} />
+              <CoordInput label="Pickup Location" color="slate" value={pickupCoords} onChange={setPickupCoords} />
+              <CoordInput label="Dropoff Location" color="slate" value={dropoffCoords} onChange={setDropoffCoords} />
             </div>
           </div>
 
-          {/* Card 2: Parameters */}
-          <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-10 shadow-2xl shadow-slate-200/40 border border-white/80 transition-all">
-            <div className="flex items-center gap-4 mb-8 pb-5 border-b border-slate-200/50">
-              <div className="bg-slate-100/50 p-2.5 rounded-2xl">
+          {/* Card 2: Settings */}
+          <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 shadow-xl border border-slate-100">
+            <div className="flex items-center gap-4 mb-8 pb-5 border-b border-slate-100">
+              <div className="bg-slate-100 p-2.5 rounded-2xl">
                 <Settings2 className="w-6 h-6 text-slate-700" />
               </div>
               <h2 className="text-2xl font-bold text-slate-800">Trip Settings</h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-              <ParamField
-                label="Avg Speed (mph)"
-                name="speed_mph"
-                value={params.speed_mph}
-                onChange={handleParamChange}
-                min={20}
-                max={80}
-              />
-              <ParamField
-                label="Remaining Fuel Distance"
-                name="remaining_fuel_distance"
-                value={params.remaining_fuel_distance}
-                onChange={handleParamChange}
-                min={0}
-                max={2000}
-              />
-              <ParamField
-                label="Current Cycle Used"
-                name="current_cycle_used"
-                value={params.current_cycle_used}
-                onChange={handleParamChange}
-                min={0}
-                max={70}
-              />
+              <ParamField label="Avg Speed (mph)" name="speed_mph" value={params.speed_mph} onChange={handleParamChange} min={20} max={80} />
+              <ParamField label="Remaining Fuel" name="remaining_fuel_distance" value={params.remaining_fuel_distance} onChange={handleParamChange} min={0} max={2000} />
+              <ParamField label="Cycle Used" name="current_cycle_used" value={params.current_cycle_used} onChange={handleParamChange} min={0} max={70} />
             </div>
           </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-600 text-sm font-semibold flex items-center justify-center">
-              {error}
-            </div>
-          )}
+          {error && <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-600 text-sm font-semibold text-center">{error}</div>}
 
-          {/* Submit Button */}
           <Button
             type="submit"
             variant="contained"
-            color="primary"
             disabled={loading}
             fullWidth
             sx={{ 
-              height: 64, 
-              borderRadius: '2rem', 
-              fontSize: '1.125rem', 
-              fontWeight: 700,
-              textTransform: 'none',
-              boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-              '&:hover': {
-                bgcolor: 'secondary.main',
-                transform: 'translateY(-1px)'
-              }
+              height: 64, borderRadius: '2rem', fontSize: '1.125rem', fontWeight: 700,
+              textTransform: 'none', bgcolor: '#0a1120',
+              '&:hover': { bgcolor: '#1e293b' }
             }}
           >
-            {loading ? (
-              <div className="flex items-center gap-3">
-                <CircularProgress size={20} color="inherit" />
-                Calculating Route...
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                Calculate Trip
-                <div className="bg-teal-400/20 rounded-full p-1 text-white ml-2">
-                  <Zap className="w-5 h-5 fill-current" />
-                </div>
-              </div>
-            )}
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Calculate Trip'}
           </Button>
         </form>
       </div>
@@ -202,7 +140,7 @@ export default function TripForm() {
   )
 }
 
-function ParamField({ label, name, value, onChange, min, max }: any) {
+function ParamField({ label, name, value, onChange, min, max }) {
   return (
     <TextField
       label={label}
@@ -213,13 +151,7 @@ function ParamField({ label, name, value, onChange, min, max }: any) {
       fullWidth
       variant="outlined"
       slotProps={{ htmlInput: { min, max } }}
-      sx={{
-        '& .MuiOutlinedInput-root': {
-          borderRadius: '12px',
-          backgroundColor: '#f8fafc',
-          fontWeight: 500,
-        }
-      }}
+      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '16px', backgroundColor: '#f8fafc' } }}
     />
   )
 }
