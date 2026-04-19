@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 # --- 1. CORE UTILITIES ---
 GEOC_CACHE = {}
+MAX_GEOC_REQUESTS = 12  # Stay safely under the gunicorn timeout
+_request_count = 0
 
 def load_scaleable_font(size):
     font_paths = [
@@ -29,33 +31,36 @@ def load_scaleable_font(size):
     return ImageFont.load_default()
 
 def safe_draw_text(draw, pos, text, font, color):
-    """Safely draws text, handling the fact that default fonts don't support anchors."""
+    """Safely draws text, handles missing anchor support in default fonts."""
     try:
-        # Try drawing with anchor first (works for TrueType fonts)
         draw.text(pos, str(text), fill=color, font=font, anchor="mm")
     except TypeError:
-        # Fallback for default bitmap font which doesn't support 'anchor'
         draw.text(pos, str(text), fill=color, font=font)
 
 def get_city_state(coordinate_pair):
     """
-    Lightweight reverse geocoding with a memory-efficient cache.
-    Minimizes network requests to stay within Nominatim usage limits and Gunicorn timeouts.
+    Lightweight cached geocoding. 
+    Uses 2-decimal precision to maximize cache hits along road segments.
     """
+    global _request_count
     if not coordinate_pair or len(coordinate_pair) != 2: 
         return "Unknown"
     
     lon, lat = coordinate_pair
-    # Round to 3 decimal places (~100m precision) to increase cache hits
-    cache_key = (round(lat, 3), round(lon, 3))
+    # Round to 2 decimal places (~1.1km precision) for massive cache hit improvement
+    cache_key = (round(lat, 2), round(lon, 2))
     
     if cache_key in GEOC_CACHE:
         return GEOC_CACHE[cache_key]
 
+    if _request_count >= MAX_GEOC_REQUESTS:
+        return f"{lat:.1f}, {lon:.1f}"
+
     geolocator = Nominatim(user_agent="spotter-ai-eld-v2", timeout=5)
     try:
-        # Rate limit compliance: Only sleep on a fresh cache miss
+        # Respect Nominatim's 1 req/sec policy
         time.sleep(1.2) 
+        _request_count += 1
         location = geolocator.reverse(f"{lat}, {lon}", exactly_one=True)
         
         if location and location.raw.get('address'):
@@ -66,16 +71,15 @@ def get_city_state(coordinate_pair):
             GEOC_CACHE[cache_key] = result
             return result
         
-        fallback = f"{lat:.2f}, {lon:.2f}"
+        fallback = f"{lat:.1f}, {lon:.1f}"
         GEOC_CACHE[cache_key] = fallback
         return fallback
     except Exception as e:
         logger.warning("Geocoding error: %s", e)
-        return f"{lat:.2f}, {lon:.2f}"
+        return f"{lat:.1f}, {lon:.1f}"
 
 # --- 2. TEMPORAL LOGIC ---
 def split_trip_by_days(trip_logs, start_dt):
-    logger.info("split_trip_by_days start: %d trip entries start_dt=%s", len(trip_logs), start_dt)
     days = {}
     current_time = start_dt
     total_entries = len(trip_logs)
@@ -108,12 +112,10 @@ def split_trip_by_days(trip_logs, start_dt):
     return days
 
 # --- 3. RENDERING ENGINE ---
-def render_log_page(template_path, day_date, logs, constant_speed, truck_num, carrier, office, home, from_coord, to_coord):
-    logger.info("render_log_page start: date=%s logs=%d", day_date, len(logs))
+def render_log_page(template_path, day_date, logs, constant_speed, truck_num, carrier, office, home, from_loc_str, to_loc_str):
     try:
         img = Image.open(template_path).convert("RGBA")
     except:
-        print(f"Error: Template {template_path} not found.")
         logger.error("Template not found: %s", template_path)
         return None
         
@@ -138,9 +140,9 @@ def render_log_page(template_path, day_date, logs, constant_speed, truck_num, ca
     f_addr = load_scaleable_font(38)
     f_rmks = load_scaleable_font(26)
 
-    # Header Data
-    safe_draw_text(draw, ROUTE_POS["from"], get_city_state(from_coord), f_addr, DARK_BLUE)
-    safe_draw_text(draw, ROUTE_POS["to"], get_city_state(to_coord), f_addr, DARK_BLUE)
+    # Header Data - Pre-geocoded to save time
+    safe_draw_text(draw, ROUTE_POS["from"], from_loc_str, f_addr, DARK_BLUE)
+    safe_draw_text(draw, ROUTE_POS["to"], to_loc_str, f_addr, DARK_BLUE)
     
     m, d, y = day_date.split("/")
     safe_draw_text(draw, DATE_POS["month"], m, f_std, DARK_BLUE)
@@ -210,28 +212,35 @@ def render_log_page(template_path, day_date, logs, constant_speed, truck_num, ca
 
 # --- 4. PDF ASSEMBLY ---
 def generate_multi_day_pdf(output_name, template, trip_logs, start_dt, speed, truck, carrier, office, home, f_coord, t_coord):
-    logger.info("generate_multi_day_pdf start: output=%s start_dt=%s speed=%.2f truck=%s", output_name, start_dt, speed, truck)
+    global _request_count
+    _request_count = 0  # Reset for each request
+    logger.info("generate_multi_day_pdf start: output=%s", output_name)
     daily_chunks = split_trip_by_days(trip_logs, start_dt)
     
     if not daily_chunks:
-        logger.warning("No valid log data found. PDF not created.")
-        print("No valid log data found. PDF not created.")
+        logger.warning("No valid log data found.")
         return None
+
+    # Pre-geocode header locations once to save up to 40 seconds on long trips
+    from_loc_str = get_city_state(f_coord)
+    to_loc_str = get_city_state(t_coord)
 
     pdf = FPDF(orientation="landscape", unit="pt", format="A4")
     
     for date_key in sorted(daily_chunks.keys()):
-        img_page = render_log_page(template, date_key, daily_chunks[date_key], speed, truck or "NA", carrier or "NA", office or "NA", home or "NA", f_coord, t_coord)
+        img_page = render_log_page(
+            template, date_key, daily_chunks[date_key], 
+            speed, truck or "NA", carrier or "NA", office or "NA", home or "NA", 
+            from_loc_str, to_loc_str
+        )
         
         if img_page:
-            logger.debug("Rendering page for date=%s", date_key)
-            temp_path = f"temp_{date_key.replace('/','-')}.jpg"
+            temp_path = f"temp_{date_key.replace('/','-')}_{os.getpid()}.jpg"
             img_page.save(temp_path)
             pdf.add_page()
             pdf.image(temp_path, 0, 0, pdf.w, pdf.h)
             os.remove(temp_path)
             
     pdf.output(output_name)
-    logger.info("PDF output completed: %s", output_name)
-    print(f"[SUCCESS] PDF saved as {output_name}")
+    logger.info("PDF saved as %s", output_name)
     return output_name
