@@ -18,7 +18,8 @@ def calculate_trip(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            logger.info(f"Received calculate_trip request: {data}")
+            logger.info("Received calculate_trip request")
+            logger.debug("calculate_trip payload: %s", data)
             
             # The coordinates expect [lng, lat]
             curr_coords = data.get('curr_coords')
@@ -36,6 +37,7 @@ def calculate_trip(request):
             # 1. Fetch geographic route and distances from OpenRouteService
             logger.info("Fetching route data from OpenRouteService...")
             route_data = fetch_route_data(curr_coords, pickup_coords, dropoff_coords)
+            logger.debug("Route fetch result: %s", route_data)
             
             onloading_distance = route_data['onloading_distance']
             offloading_distance = route_data['offloading_distance']
@@ -43,6 +45,7 @@ def calculate_trip(request):
 
             # 2. Calculate raw HOS logs (The mathematical state machine)
             logger.info(f"Calculating HOS logs: onloading_dist={onloading_distance:.2f}, offloading_dist={offloading_distance:.2f}")
+            logger.debug("HOS inputs: current_cycle_used=%s speed_mph=%s remaining_fuel_distance=%s", current_cycle_used, speed_mph, remaining_fuel_distance)
             raw_logs = calculate_hos_logs(
                 onloading_distance=onloading_distance,
                 offloading_distance=offloading_distance,
@@ -83,6 +86,7 @@ def generate_logbook(request):
         try:
             data = json.loads(request.body)
             logger.info("Received request to generate PDF logbook")
+            logger.debug("generate_logbook payload: %s", data)
             
             trip_logs = data.get('trip_logs', [])
             speed = float(data.get('speed', 60.0))
@@ -92,6 +96,7 @@ def generate_logbook(request):
             home = data.get('home', 'NA')
             f_coord = data.get('from_coord', [0, 0])
             t_coord = data.get('to_coord', [0, 0])
+            logger.debug("generate_logbook trip_logs count=%d", len(trip_logs))
             start_dt_str = data.get('start_time')
             
             if start_dt_str:
@@ -100,7 +105,8 @@ def generate_logbook(request):
                 start_dt = datetime.now()
 
             output_filename = f"/tmp/logbook_{uuid.uuid4().hex}.pdf"
-            template_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logbook.png")
+            template_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "perfect_log.png")
+            logger.debug("Using template path: %s", template_path)
             
             # Generate PDF
             generate_multi_day_pdf(
@@ -118,12 +124,15 @@ def generate_logbook(request):
             )
             
             if os.path.exists(output_filename):
+                logger.info("Generated PDF file exists: %s", output_filename)
                 with open(output_filename, 'rb') as pdf_file:
                     response = HttpResponse(pdf_file.read(), content_type='application/pdf')
-                    response['Content-Disposition'] = 'attachment; filename="logbook.pdf"'
-                os.remove(output_filename) # Clean up file after reading
+                    # 'inline' allows browsers to open it in a tab instead of forcing a download
+                    response['Content-Disposition'] = 'inline; filename="logbook.pdf"'
+                # os.remove(output_filename) # Clean up file after reading (Disabled as requested)
                 return response
             else:
+                logger.error("PDF generation returned no file: %s", output_filename)
                 return JsonResponse({'error': 'Failed to generate PDF'}, status=500)
                 
         except Exception as e:

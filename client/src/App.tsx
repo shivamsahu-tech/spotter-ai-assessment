@@ -3,7 +3,6 @@ import { ThemeProvider, createTheme, CssBaseline } from '@mui/material'
 import TripForm from './pages/TripForm'
 import MapView from './pages/MapView'
 import Home from './pages/Home'
-import ELDPage from './pages/ELDPage'
 import './index.css'
 
 const theme = createTheme({
@@ -32,7 +31,6 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/trip" element={<TripForm />} />
           <Route path="/map" element={<MapView />} />
-          <Route path="/eld" element={<ELDPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

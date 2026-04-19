@@ -144,4 +144,8 @@ LOGGING = {
             'propagate': True,
         },
     },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
 }

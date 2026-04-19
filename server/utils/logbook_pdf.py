@@ -1,34 +1,51 @@
 import time
 import math
 import os
+import logging
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 from fpdf import FPDF
 from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut, GeocoderServiceError
-from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 # --- 1. CORE UTILITIES ---
 def load_scaleable_font(size):
     font_paths = [
-        "arial.ttf", "C:\\Windows\\Fonts\\arial.ttf",                      
+        "/usr/share/fonts/truetype/open-sans/OpenSans-Regular.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "arial.ttf", 
+        "C:\\Windows\\Fonts\\arial.ttf",
         "/Library/Fonts/Arial.ttf"
     ]
     for path in font_paths:
-        try: return ImageFont.truetype(path, size)
-        except: continue
+        try:
+            return ImageFont.truetype(path, size)
+        except:
+            continue
     return ImageFont.load_default()
 
+def safe_draw_text(draw, pos, text, font, color):
+    """Safely draws text, handling the fact that default fonts don't support anchors."""
+    try:
+        # Try drawing with anchor first (works for TrueType fonts)
+        draw.text(pos, str(text), fill=color, font=font, anchor="mm")
+    except TypeError:
+        # Fallback for default bitmap font which doesn't support 'anchor'
+        draw.text(pos, str(text), fill=color, font=font)
+
 def get_city_state(coordinate_pair, retries=2):
+    logger.debug("get_city_state start: coordinate_pair=%s retries=%d", coordinate_pair, retries)
     if not coordinate_pair or len(coordinate_pair) != 2: return "Unknown"
     lon, lat = coordinate_pair
-    geolocator = Nominatim(user_agent="spotter-ai-eld", timeout=10)
+    geolocator = Nominatim(user_agent="spotter-ai-eld-v2", timeout=10)
     for _ in range(retries):
         try:
             time.sleep(1.2)
             location = geolocator.reverse(f"{lat}, {lon}", exactly_one=True)
             if location and location.raw.get('address'):
+                logger.debug("Geocode success: %s", location.raw.get('address'))
                 addr = location.raw['address']
                 city = addr.get('city', addr.get('town', addr.get('village', 'Unknown')))
                 state = addr.get('state', '')
@@ -39,17 +56,13 @@ def get_city_state(coordinate_pair, retries=2):
 
 # --- 2. TEMPORAL LOGIC ---
 def split_trip_by_days(trip_logs, start_dt):
-    """
-    Slices a continuous list of logs into 24-hour buckets (Midnight to Midnight).
-    """
+    logger.info("split_trip_by_days start: %d trip entries start_dt=%s", len(trip_logs), start_dt)
     days = {}
     current_time = start_dt
-    
     total_entries = len(trip_logs)
     
     for i, entry in enumerate(trip_logs):
-        if "duration_hours" not in entry:
-            continue
+        if "duration_hours" not in entry: continue
         rem_dur = entry["duration_hours"]
         is_first_of_trip = (i == 0)
         
@@ -73,20 +86,22 @@ def split_trip_by_days(trip_logs, start_dt):
             
             rem_dur -= chunk_duration
             current_time += timedelta(hours=chunk_duration)
-            
     return days
 
 # --- 3. RENDERING ENGINE ---
 def render_log_page(template_path, day_date, logs, constant_speed, truck_num, carrier, office, home, from_coord, to_coord):
+    logger.info("render_log_page start: date=%s logs=%d", day_date, len(logs))
     try:
         img = Image.open(template_path).convert("RGBA")
     except:
-        print(f"Template {template_path} not found.")
+        print(f"Error: Template {template_path} not found.")
+        logger.error("Template not found: %s", template_path)
         return None
         
     draw = ImageDraw.Draw(img)
     DARK_BLUE = (0, 0, 139, 255)
 
+    # Position Mappings
     DATE_POS = {"month": (758, 49), "day": (926, 49), "year": (1092, 51)}
     ROUTE_POS = {"from": (662, 167), "to": (1401, 168)}
     MILES_POS = {"driving": (376, 307), "total": (714, 309)}
@@ -104,18 +119,19 @@ def render_log_page(template_path, day_date, logs, constant_speed, truck_num, ca
     f_addr = load_scaleable_font(38)
     f_rmks = load_scaleable_font(26)
 
-    draw.text(ROUTE_POS["from"], get_city_state(from_coord), fill=DARK_BLUE, font=f_addr, anchor="mm")
-    draw.text(ROUTE_POS["to"], get_city_state(to_coord), fill=DARK_BLUE, font=f_addr, anchor="mm")
+    # Header Data
+    safe_draw_text(draw, ROUTE_POS["from"], get_city_state(from_coord), f_addr, DARK_BLUE)
+    safe_draw_text(draw, ROUTE_POS["to"], get_city_state(to_coord), f_addr, DARK_BLUE)
     
     m, d, y = day_date.split("/")
-    draw.text(DATE_POS["month"], m, fill=DARK_BLUE, font=f_std, anchor="mm")
-    draw.text(DATE_POS["day"], d, fill=DARK_BLUE, font=f_std, anchor="mm")
-    draw.text(DATE_POS["year"], y[-2:], fill=DARK_BLUE, font=f_std, anchor="mm")
+    safe_draw_text(draw, DATE_POS["month"], m, f_std, DARK_BLUE)
+    safe_draw_text(draw, DATE_POS["day"], d, f_std, DARK_BLUE)
+    safe_draw_text(draw, DATE_POS["year"], y[-2:], f_std, DARK_BLUE)
 
-    draw.text(TRUCK_POS, truck_num, fill=DARK_BLUE, font=f_std, anchor="mm")
-    draw.text(ADDR_POS["carrier"], carrier, fill=DARK_BLUE, font=f_addr, anchor="mm")
-    draw.text(ADDR_POS["office"], office, fill=DARK_BLUE, font=f_addr, anchor="mm")
-    draw.text(ADDR_POS["home"], home, fill=DARK_BLUE, font=f_addr, anchor="mm")
+    safe_draw_text(draw, TRUCK_POS, truck_num, f_std, DARK_BLUE)
+    safe_draw_text(draw, ADDR_POS["carrier"], carrier, f_addr, DARK_BLUE)
+    safe_draw_text(draw, ADDR_POS["office"], office, f_addr, DARK_BLUE)
+    safe_draw_text(draw, ADDR_POS["home"], home, f_addr, DARK_BLUE)
 
     last_y, totals = None, {k: 0.0 for k in ROW_Y.keys()}
     
@@ -128,8 +144,7 @@ def render_log_page(template_path, day_date, logs, constant_speed, truck_num, ca
         x_end = x_start + (duration / 24.0) * TOTAL_WIDTH
         y_curr = ROW_Y.get(status, 778)
         
-        if status in totals:
-            totals[status] += duration
+        if status in totals: totals[status] += duration
 
         if last_y is not None and last_y != y_curr:
             draw.line([(x_start, last_y), (x_start, y_curr)], fill=DARK_BLUE, width=6)
@@ -141,6 +156,7 @@ def render_log_page(template_path, day_date, logs, constant_speed, truck_num, ca
         if entry.get("is_trip_boundary_end"):
             draw.ellipse([x_end-8, y_curr-8, x_end+8, y_curr+8], fill=DARK_BLUE)
 
+        # Remarks
         reason = entry.get("reason", "")
         if reason and reason.lower() not in ["rest", "sleep", "34"]:
             loc_name = get_city_state(entry.get("coordinate"))
@@ -162,33 +178,34 @@ def render_log_page(template_path, day_date, logs, constant_speed, truck_num, ca
 
         last_y = y_curr
 
+    # Final Totals
     total_driving_hours = totals.get("Driving", 0.0)
-    
     for s, h in totals.items():
-        if h > 0: draw.text((TOTALS_X, TOTALS_Y[s]), f"{h:.1f}", fill=DARK_BLUE, font=f_std, anchor="mm")
+        if h > 0: safe_draw_text(draw, (TOTALS_X, TOTALS_Y[s]), f"{h:.1f}", f_std, DARK_BLUE)
     
     miles_str = str(int(round(total_driving_hours * constant_speed)))
-    draw.text(MILES_POS["driving"], miles_str, fill=DARK_BLUE, font=load_scaleable_font(60), anchor="mm")
-    draw.text(MILES_POS["total"], miles_str, fill=DARK_BLUE, font=load_scaleable_font(60), anchor="mm")
+    safe_draw_text(draw, MILES_POS["driving"], miles_str, load_scaleable_font(60), DARK_BLUE)
+    safe_draw_text(draw, MILES_POS["total"], miles_str, load_scaleable_font(60), DARK_BLUE)
 
     return img.convert("RGB")
 
 # --- 4. PDF ASSEMBLY ---
 def generate_multi_day_pdf(output_name, template, trip_logs, start_dt, speed, truck, carrier, office, home, f_coord, t_coord):
+    logger.info("generate_multi_day_pdf start: output=%s start_dt=%s speed=%.2f truck=%s", output_name, start_dt, speed, truck)
     daily_chunks = split_trip_by_days(trip_logs, start_dt)
+    
+    if not daily_chunks:
+        logger.warning("No valid log data found. PDF not created.")
+        print("No valid log data found. PDF not created.")
+        return None
+
     pdf = FPDF(orientation="landscape", unit="pt", format="A4")
     
     for date_key in sorted(daily_chunks.keys()):
-        print(f"Processing day: {date_key}")
-        
-        t_truck = truck if truck else "NA"
-        t_carrier = carrier if carrier and "inxtinct" not in carrier.lower() else "NA"
-        t_office = office if office else "NA"
-        t_home = home if home else "NA"
-        
-        img_page = render_log_page(template, date_key, daily_chunks[date_key], speed, t_truck, t_carrier, t_office, t_home, f_coord, t_coord)
+        img_page = render_log_page(template, date_key, daily_chunks[date_key], speed, truck or "NA", carrier or "NA", office or "NA", home or "NA", f_coord, t_coord)
         
         if img_page:
+            logger.debug("Rendering page for date=%s", date_key)
             temp_path = f"temp_{date_key.replace('/','-')}.jpg"
             img_page.save(temp_path)
             pdf.add_page()
@@ -196,5 +213,6 @@ def generate_multi_day_pdf(output_name, template, trip_logs, start_dt, speed, tr
             os.remove(temp_path)
             
     pdf.output(output_name)
-    print(f"\n[SUCCESS] PDF saved as {output_name}")
+    logger.info("PDF output completed: %s", output_name)
+    print(f"[SUCCESS] PDF saved as {output_name}")
     return output_name

@@ -1,4 +1,7 @@
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 def calculate_haversine_miles(coord1, coord2):
     """
@@ -31,6 +34,7 @@ def attach_coordinates_to_logs(trip_logs, route_geometry, speed_mph=60.0):
     Walks the route_geometry array and assigns an exact [lng, lat] 
     coordinate to every stationary event in the trip_logs.
     """
+    logger.info("attach_coordinates_to_logs start: events=%d geometry_points=%d speed=%.2f", len(trip_logs), len(route_geometry), speed_mph)
     cumulative_truck_distance = 0.0
     
     # State trackers for the geometry array to keep this O(N) efficient
@@ -75,5 +79,6 @@ def attach_coordinates_to_logs(trip_logs, route_geometry, speed_mph=60.0):
                 round(route_geometry[-1][0], 5), 
                 round(route_geometry[-1][1], 5)
             ]
+            logger.warning("Coordinate fallback used for event idx=%d, status=%s", trip_logs.index(event), event.get('status'))
 
     return trip_logs

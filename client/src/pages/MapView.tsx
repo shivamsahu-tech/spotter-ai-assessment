@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import LogTimeline from '../components/LogTimeline'
-import { ArrowLeft, Route, Truck, MapPin, Moon, Coffee, Package, Navigation } from 'lucide-react'
+import { ArrowLeft, Route, Truck, MapPin, Moon, Coffee, Package, Navigation, Loader2 } from 'lucide-react'
 
 // Leaflet icon fix for Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -117,6 +117,15 @@ export default function MapView() {
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [startHour, setStartHour] = useState(0)
 
+  // New ELD Form State
+  const [truckNumber, setTruckNumber] = useState('TRK-902')
+  const [carrierName, setCarrierName] = useState('Dummy Carrier Inc')
+  const [officeAddress, setOfficeAddress] = useState('1234 Dummy St, Seattle')
+  const [homeTerminal, setHomeTerminal] = useState('Terminal A, Seattle')
+  
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [loaderText, setLoaderText] = useState('Initializing...')
+
   const polylinePositions = useMemo<[number, number][]>(
     () => route_geometry.map(([lng, lat]: [number, number]) => [lat, lng]),
     [route_geometry]
@@ -162,7 +171,7 @@ export default function MapView() {
           onClick={() => setShowEldModal(true)}
           className="ml-auto sm:ml-4 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-teal-600 text-white hover:bg-teal-700 transition-colors shadow-sm"
         >
-          See ELD Logbook
+          Download ELD Book
         </button>
       </header>
 
@@ -273,40 +282,167 @@ export default function MapView() {
 
       {showEldModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-[2rem] p-6 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">Configure ELD Logbook</h2>
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Trip Start Date</label>
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={(e) => setStartDate(e.target.value)} 
-                  className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-teal-500 focus:ring-0 outline-none" 
-                />
+          <div className="bg-white rounded-[2rem] p-8 w-full max-w-xl shadow-2xl relative overflow-hidden">
+            
+            {/* Loader Overlay */}
+            {isGenerating && (
+              <div className="absolute inset-0 bg-white/90 backdrop-blur-md z-[1100] flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
+                <div className="w-16 h-16 rounded-full border-4 border-teal-100 border-t-teal-600 animate-spin mb-6"></div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">Generating ELD Logbook</h3>
+                <p className="text-teal-600 font-medium animate-pulse">{loaderText}</p>
+                <p className="text-slate-400 text-xs mt-4">This takes a moment to process geographic data and render PDF pages.</p>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center">
+                <Truck className="w-6 h-6 text-teal-600" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Trip Start Time</label>
-                <select 
-                  value={startHour} 
-                  onChange={(e) => setStartHour(Number(e.target.value))} 
-                  className="w-full border-2 border-slate-200 rounded-xl p-3 focus:border-teal-500 focus:ring-0 outline-none"
-                >
-                  {[...Array(24)].map((_, i) => (
-                    <option key={i} value={i}>
-                      {i === 0 ? '00:00 (Midnight)' : i === 12 ? '12:00 (Noon)' : `${i.toString().padStart(2, '0')}:00`}
-                    </option>
-                  ))}
-                </select>
+                <h2 className="text-2xl font-bold text-slate-800">ELD Logbook Data</h2>
+                <p className="text-slate-500 text-sm">Fill in the details for the PDF report.</p>
               </div>
             </div>
-            <div className="flex gap-3 justify-end">
-              <button onClick={() => setShowEldModal(false)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">Cancel</button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Trip Start Date</label>
+                  <input 
+                    type="date" 
+                    value={startDate} 
+                    onChange={(e) => setStartDate(e.target.value)} 
+                    className="w-full border-2 border-slate-100 rounded-xl p-3 bg-slate-50 focus:bg-white focus:border-teal-500 transition-all outline-none font-medium" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Start Hour</label>
+                  <select 
+                    value={startHour} 
+                    onChange={(e) => setStartHour(Number(e.target.value))} 
+                    className="w-full border-2 border-slate-100 rounded-xl p-3 bg-slate-50 focus:bg-white focus:border-teal-500 transition-all outline-none font-medium"
+                  >
+                    {[...Array(24)].map((_, i) => (
+                      <option key={i} value={i}>
+                        {i === 0 ? '00:00 (Midnight)' : i === 12 ? '12:00 (Noon)' : `${i.toString().padStart(2, '0')}:00`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Truck Number</label>
+                  <input 
+                    type="text" 
+                    value={truckNumber} 
+                    onChange={(e) => setTruckNumber(e.target.value)} 
+                    placeholder="TRK-000"
+                    className="w-full border-2 border-slate-100 rounded-xl p-3 bg-slate-50 focus:bg-white focus:border-teal-500 transition-all outline-none font-medium" 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Carrier Name</label>
+                  <input 
+                    type="text" 
+                    value={carrierName} 
+                    onChange={(e) => setCarrierName(e.target.value)} 
+                    className="w-full border-2 border-slate-100 rounded-xl p-3 bg-slate-50 focus:bg-white focus:border-teal-500 transition-all outline-none font-medium" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Office Address</label>
+                  <textarea 
+                    value={officeAddress} 
+                    onChange={(e) => setOfficeAddress(e.target.value)} 
+                    rows={1}
+                    className="w-full border-2 border-slate-100 rounded-xl p-3 bg-slate-50 focus:bg-white focus:border-teal-500 transition-all outline-none font-medium resize-none" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Home Terminal</label>
+                  <input 
+                    type="text" 
+                    value={homeTerminal} 
+                    onChange={(e) => setHomeTerminal(e.target.value)} 
+                    className="w-full border-2 border-slate-100 rounded-xl p-3 bg-slate-50 focus:bg-white focus:border-teal-500 transition-all outline-none font-medium" 
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
               <button 
-                onClick={() => navigate('/eld', { state: { flatLogs: trip_logs, startDate, startHour } })} 
-                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-teal-600 hover:bg-teal-700"
+                onClick={() => setShowEldModal(false)} 
+                className="flex-1 py-4 rounded-2xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors"
               >
-                Generate Logbook
+                Cancel
+              </button>
+              <button 
+                onClick={async () => {
+                  try {
+                    setIsGenerating(true)
+                    setLoaderText('Connecting to HOS engine...')
+                    
+                    // Small delay to show initial text
+                    await new Promise(r => setTimeout(r, 600))
+                    setLoaderText('Resolving geographic coordinates (Reverse Geo)...')
+                    
+                    const payload = {
+                      trip_logs: trip_logs,
+                      speed: 60, // Default or taken from settings
+                      truck: truckNumber,
+                      carrier: carrierName,
+                      office: officeAddress,
+                      home: homeTerminal,
+                      from_coord: trip_logs[0]?.coordinate || [0,0],
+                      to_coord: trip_logs[trip_logs.length - 1]?.coordinate || [0,0],
+                      start_time: new Date(`${startDate}T${startHour.toString().padStart(2, '0')}:00:00Z`).toISOString()
+                    };
+
+                    const timeoutId = setTimeout(() => {
+                      setLoaderText('Still working... Mapping large trip datasets...')
+                    }, 5000)
+
+                    const res = await fetch('http://localhost:8000/api/generate-logbook/', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(payload)
+                    });
+
+                    clearTimeout(timeoutId)
+                    setLoaderText('Formatting PDF pages and headers...')
+                    await new Promise(r => setTimeout(r, 800))
+
+                    if (!res.ok) {
+                      throw new Error(`Server error: ${res.status}`);
+                    }
+
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = url;
+                    downloadLink.download = 'logbook.pdf';
+                    downloadLink.style.display = 'none';
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    setTimeout(() => {
+                      downloadLink.remove();
+                      window.URL.revokeObjectURL(url);
+                    }, 1000);
+                    
+                    setShowEldModal(false)
+                  } catch (err) {
+                    console.error(err)
+                    alert('PDF Generation failed. Is the server running?')
+                  } finally {
+                    setIsGenerating(false)
+                  }
+                }} 
+                className="flex-[2] py-4 rounded-2xl text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-lg shadow-teal-600/20 transition-all active:scale-[0.98]"
+              >
+                Download the ELD book
               </button>
             </div>
           </div>

@@ -2,8 +2,13 @@ import os
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import logging
+
+logger = logging.getLogger(__name__)
 
 def fetch_route_data(curr_coords, pickup_coords, dropoff_coords):
+    logger.info("fetch_route_data start")
+    logger.debug("Coordinates: curr=%s pickup=%s dropoff=%s", curr_coords, pickup_coords, dropoff_coords)
     # 1. Pull the API key 
     API_KEY = os.environ.get("ORS_API_KEY")  or "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImNmYjQwYmIwNmRlNzRkMWE5NDlmNWVhY2I5YzQ5ZDc3IiwiaCI6Im11cm11cjY0In0="
     
@@ -34,6 +39,8 @@ def fetch_route_data(curr_coords, pickup_coords, dropoff_coords):
     try:
         response = session.post(BASE_URL, json=body, headers=headers, timeout=15)
         response.raise_for_status()
+        logger.info("ORS route request succeeded: %s", response.status_code)
+        logger.debug("ORS response headers: %s", response.headers)
     except requests.exceptions.RequestException as e:
         error_msg = str(e)
         if 'response' in locals() and response is not None:
@@ -64,6 +71,7 @@ def fetch_route_data(curr_coords, pickup_coords, dropoff_coords):
     total_offloading_distance = distance_to_pickup + distance_pickup_to_dropoff
     
     full_route_geometry = data['features'][0]['geometry']['coordinates']
+    logger.info("Route data computed: onloading=%.2f offloading=%.2f geometry_length=%d", distance_to_pickup, total_offloading_distance, len(full_route_geometry))
 
     return {
         "onloading_distance": round(distance_to_pickup, 2),

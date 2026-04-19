@@ -1,4 +1,7 @@
 from typing import List, Dict, Any
+import logging
+
+logger = logging.getLogger(__name__)
 
 def calculate_hos_logs(
     onloading_distance: float, 
@@ -16,9 +19,12 @@ def calculate_hos_logs(
     }
     trip_logs: List[Dict[str, Any]] = []
 
+    logger.info("calculate_hos_logs start: onloading_distance=%.2f offloading_distance=%.2f current_cycle_used=%.2f speed_mph=%.2f remaining_fuel_distance=%.2f", onloading_distance, offloading_distance, current_cycle_used, speed_mph, remaining_fuel_distance)
+
     def log_event(status: str, duration: float, reason: str = "") -> None:
         if duration > 0.001:
             trip_logs.append({"status": status, "duration_hours": round(duration, 4), "reason": reason})
+            logger.debug("HOS event: status=%s duration=%.4f reason=%s", status, duration, reason)
 
     trip_completed = False
 
@@ -101,4 +107,5 @@ def calculate_hos_logs(
         state['cycle_left'] -= time_to_advance
 
     log_event("Off Duty", 0, "Trip Complete")
+    logger.info("calculate_hos_logs completed: events=%d", len(trip_logs))
     return trip_logs
