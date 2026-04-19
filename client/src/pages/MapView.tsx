@@ -150,7 +150,7 @@ export default function MapView() {
 
   return (
     <div
-      className="min-h-screen flex flex-col font-sans"
+      className="h-screen flex flex-col font-sans"
       style={{ background: 'linear-gradient(140deg,#dff2f0 0%,#f4f7f9 50%,#edf2f7 100%)' }}
     >
       {/* ── Top bar ── */}
@@ -211,19 +211,39 @@ export default function MapView() {
               pathOptions={{ color: '#ffffff', weight: 9, opacity: 0.3 }}
             />
 
+            {/* Start Marker (Current Location) */}
+            <Marker
+              position={[route_geometry[0][1], route_geometry[0][0]]}
+              icon={buildIcon('Driving', true, false, true, 'Original Start')}
+            >
+              <Tooltip direction="top" offset={[0, -4]} opacity={1}>
+                <div style={{
+                  fontFamily: 'inherit', minWidth: 170, background: 'white', border: '1.5px solid #bae6fd',
+                  borderRadius: 12, padding: '10px 13px', boxShadow: '0 4px 20px rgba(0,0,0,0.10)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#0ea5e9' }} />
+                    <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>🚛 Current Location</span>
+                  </div>
+                  <p style={{ fontSize: 11, color: '#64748b', margin: '4px 0 0', fontWeight: 600 }}>Trip Starting Point</p>
+                </div>
+              </Tooltip>
+            </Marker>
+
             {/* Stop markers */}
             {stops.map((stop: any, i: number) => {
-              const isFirst = i === 0
               const isLast  = i === stops.length - 1
-              // Force 'current' meta for the first point (Current Location)
-              const meta    = isFirst ? STATUS_META['current'] : (STATUS_META[stop.status] ?? STATUS_META['Off Duty'])
+              const meta    = STATUS_META[stop.status] ?? STATUS_META['Off Duty']
               const pos: [number, number] = [stop.coordinate[1], stop.coordinate[0]]
+
+              // Check if this stop is at the exact same spot as the start
+              const isAtStart = stop.coordinate[0] === route_geometry[0][0] && stop.coordinate[1] === route_geometry[0][1];
 
               return (
                 <Marker
                   key={i}
                   position={pos}
-                  icon={buildIcon(stop.status, isFirst, isLast, isFirst, stop.reason)}
+                  icon={buildIcon(stop.status, false, isLast, false, stop.reason)}
                 >
                   <Tooltip
                     permanent={false}
@@ -257,7 +277,7 @@ export default function MapView() {
                             else if (lowerReason.includes('loading')) icon = '📦';
                             else if (lowerReason.includes('break') || stop.status === 'Off Duty') icon = '☕';
                             
-                            const prefix = isFirst ? 'Start: ' : isLast ? 'End: ' : '';
+                            const prefix = isLast ? 'End: ' : isAtStart ? 'At Origin: ' : '';
                             return `${icon} ${prefix}${meta.label}`;
                           })()}
                         </span>
