@@ -38,7 +38,7 @@ export default function ResultsSection() {
     <section ref={sectionRef} className="py-24 relative overflow-hidden">
       <div className="w-full max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="mb-16 text-center">
-          <h2 className="text-3xl lg:text-5xl font-extrabold text-slate-800 mb-6 tracking-tight">
+          <h2 className="text-3xl lg:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">
             Its <span className="text-teal-600">Results</span>
           </h2>
           <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto">

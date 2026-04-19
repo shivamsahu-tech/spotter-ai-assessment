@@ -71,22 +71,31 @@ export default function HeroSection() {
       <header className="relative z-30 flex-shrink-0">
         <nav className="w-full max-w-7xl mx-auto px-6 md:px-12 py-7 flex items-center justify-between">
           {/* Logo */}
-          <div className="ht flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center shadow-md shadow-teal-500/30 flex-shrink-0">
-              <div className="w-2 h-2 bg-white rounded-full" />
+          <div className="ht flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center shadow-sm">
+              <Truck className="w-6 h-6 text-teal-600" />
             </div>
-            <span className="font-extrabold tracking-tight text-[1.15rem] text-slate-900 leading-none">
-              SPOTTER <span className="font-light text-slate-400 text-[1rem]">AI</span>
+            <span className="font-extrabold tracking-tighter text-[1.25rem] text-slate-900 leading-none">
+              SPOTTER <span className="font-light text-teal-600 uppercase tracking-widest text-[0.8rem] ml-0.5">AI</span>
             </span>
           </div>
 
           {/* Single CTA */}
-          <button
-            onClick={() => navigate('/trip')}
-            className="ht flex items-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-full text-[0.875rem] font-semibold hover:bg-slate-700 hover:shadow-lg active:scale-95 transition-all"
+          <a
+            href="https://github.com/shivamsahu-tech/spotter-ai-assessment"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ht flex items-center gap-3 bg-slate-900 text-white px-5 py-2.5 rounded-full text-[0.85rem] font-bold hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-200 active:scale-95 transition-all group"
           >
-            Get Started <ChevronRight className="w-4 h-4" />
-          </button>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors">
+              <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.28 1.15-.28 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+              <path d="M9 18c-4.51 2-5-2-7-2" />
+            </svg>
+            <span>github</span>
+            <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+              <ChevronRight className="w-3.5 h-3.5" />
+            </div>
+          </a>
         </nav>
       </header>
 
@@ -102,7 +111,7 @@ export default function HeroSection() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-teal-500" />
             </span>
-            <span className="text-[12px] font-bold text-teal-700 tracking-[0.16em] uppercase">Live Route Tracking</span>
+            <span className="text-[12px] font-bold text-teal-700 tracking-[0.16em] uppercase">Automated Route logs</span>
           </div>
 
           {/* Headline */}

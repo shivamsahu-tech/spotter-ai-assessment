@@ -78,7 +78,7 @@ export default function FeaturesSection() {
 
         {/* Section Header */}
         <div className="feature-header mb-16 max-w-3xl">
-          <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-700 mb-4 tracking-tight">
+          <h2 className="text-3xl lg:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
             Engineered for <span className="text-teal-600/90 font-semibold">Compliance.</span>
           </h2>
           <p className="text-lg text-slate-500 font-medium">
