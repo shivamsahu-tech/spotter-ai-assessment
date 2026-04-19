@@ -405,7 +405,8 @@ export default function MapView() {
                       setLoaderText('Still working... Mapping large trip datasets...')
                     }, 5000)
 
-                    const res = await fetch('http://localhost:8000/api/generate-logbook/', {
+                    const serverApi = import.meta.env.VITE_SERVER_API || ''
+                    const res = await fetch(`${serverApi}/api/generate-logbook/`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify(payload)

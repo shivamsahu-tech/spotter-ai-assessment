@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CoordInput from '../components/CoordInput'
+import AnimatedBackground from '../components/AnimatedBackground'
 import { Truck, Zap, Map as MapIcon, Settings2 } from 'lucide-react'
 import { Button, TextField, CircularProgress } from '@mui/material'
 
@@ -46,7 +47,8 @@ export default function TripForm() {
 
     setLoading(true)
     try {
-      const res = await fetch('/api/calculate-trip/', {
+      const serverApi = import.meta.env.VITE_SERVER_API || ''
+      const res = await fetch(`${serverApi}/api/calculate-trip/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -67,8 +69,9 @@ export default function TripForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f4f7f9] to-[#edf2f7] py-12 px-4 sm:px-6 font-sans">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen py-12 px-4 sm:px-6 font-sans relative">
+      <AnimatedBackground />
+      <div className="max-w-4xl mx-auto relative z-10">
         
         {/* Header */}
         <div className="text-center mb-12">
@@ -86,15 +89,15 @@ export default function TripForm() {
         <form onSubmit={handleSubmit} className="space-y-8">
           
           {/* Card 1: Locations */}
-          <div className="bg-white rounded-[2rem] p-6 sm:p-8 shadow-xl shadow-slate-200/40 border border-slate-100">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-              <div className="bg-slate-100 p-2 rounded-xl">
-                <MapIcon className="w-5 h-5 text-slate-700" />
+          <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-10 shadow-2xl shadow-slate-200/40 border border-white/80 transition-all">
+            <div className="flex items-center gap-4 mb-8 pb-5 border-b border-slate-200/50">
+              <div className="bg-slate-100/50 p-2.5 rounded-2xl">
+                <MapIcon className="w-6 h-6 text-slate-700" />
               </div>
-              <h2 className="text-xl font-bold text-slate-800">Route Waypoints</h2>
+              <h2 className="text-2xl font-bold text-slate-800">Route Waypoints</h2>
             </div>
             
-            <div className="space-y-5">
+            <div className="space-y-6">
               <CoordInput
                 label="Current Location"
                 color="teal"
@@ -117,15 +120,15 @@ export default function TripForm() {
           </div>
 
           {/* Card 2: Parameters */}
-          <div className="bg-white rounded-[2rem] p-6 sm:p-8 shadow-xl shadow-slate-200/40 border border-slate-100">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-              <div className="bg-slate-100 p-2 rounded-xl">
-                <Settings2 className="w-5 h-5 text-slate-700" />
+          <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-10 shadow-2xl shadow-slate-200/40 border border-white/80 transition-all">
+            <div className="flex items-center gap-4 mb-8 pb-5 border-b border-slate-200/50">
+              <div className="bg-slate-100/50 p-2.5 rounded-2xl">
+                <Settings2 className="w-6 h-6 text-slate-700" />
               </div>
-              <h2 className="text-xl font-bold text-slate-800">Trip Settings</h2>
+              <h2 className="text-2xl font-bold text-slate-800">Trip Settings</h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
               <ParamField
                 label="Avg Speed (mph)"
                 name="speed_mph"
@@ -135,7 +138,7 @@ export default function TripForm() {
                 max={80}
               />
               <ParamField
-                label="Remaining Fuel for Distance (mi)"
+                label="Remaining Fuel Distance"
                 name="remaining_fuel_distance"
                 value={params.remaining_fuel_distance}
                 onChange={handleParamChange}
@@ -143,7 +146,7 @@ export default function TripForm() {
                 max={2000}
               />
               <ParamField
-                label="Current Cycle Used (hrs)"
+                label="Current Cycle Used"
                 name="current_cycle_used"
                 value={params.current_cycle_used}
                 onChange={handleParamChange}

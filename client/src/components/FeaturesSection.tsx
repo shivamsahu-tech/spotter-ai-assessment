@@ -16,7 +16,7 @@ export default function FeaturesSection() {
   useEffect(() => {
     let ctx = gsap.context(() => {
       // Animate the section header
-      gsap.fromTo('.feature-header', 
+      gsap.fromTo('.feature-header',
         { y: 30, opacity: 0 },
         {
           scrollTrigger: {
@@ -31,7 +31,7 @@ export default function FeaturesSection() {
       );
 
       // Stagger animate the feature cards
-      gsap.fromTo('.feature-card', 
+      gsap.fromTo('.feature-card',
         { y: 50, opacity: 0 },
         {
           scrollTrigger: {
@@ -71,11 +71,8 @@ export default function FeaturesSection() {
   return (
     <section
       ref={sectionRef}
-      className="py-24 bg-white relative overflow-hidden"
+      className="py-24 relative overflow-hidden"
     >
-      {/* Subtle Background Gradient */}
-      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-teal-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
 
       <div className="w-full max-w-7xl mx-auto px-6 md:px-12 relative z-10">
 

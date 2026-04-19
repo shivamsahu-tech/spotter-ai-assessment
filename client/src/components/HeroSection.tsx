@@ -66,13 +66,7 @@ export default function HeroSection() {
     <div
       ref={containerRef}
       className="min-h-screen w-full font-sans text-slate-900 flex flex-col overflow-hidden relative"
-      style={{ background: 'linear-gradient(140deg,#dff2f0 0%,#edf7fa 28%,#f6fafb 58%,#eaf5f2 100%)' }}
     >
-
-      {/* Soft radial glow on right */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 65% 60% at 78% 52%,rgba(20,184,166,0.10) 0%,transparent 68%)' }}
-      />
 
       <header className="relative z-30 flex-shrink-0">
         <nav className="w-full max-w-7xl mx-auto px-6 md:px-12 py-7 flex items-center justify-between">
@@ -100,52 +94,53 @@ export default function HeroSection() {
       <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-6 md:px-12 flex flex-col lg:flex-row items-center gap-10 xl:gap-16 pb-10 lg:pb-0">
 
         {/* ── LEFT ─────────────────────────────────────────────────── */}
-        <div className="w-full lg:w-[46%] xl:w-[42%] flex flex-col gap-6">
+        <div className="w-full lg:w-[48%] xl:w-[45%] flex flex-col gap-10 lg:gap-14">
 
           {/* Live badge */}
-          <div className="ht flex items-center gap-2 w-fit bg-white/70 backdrop-blur-sm border border-teal-100 px-4 py-1.5 rounded-full shadow-sm">
-            <span className="relative flex h-2 w-2">
+          <div className="ht flex items-center gap-2 w-fit bg-white/70 backdrop-blur-sm border border-teal-100 px-5 py-2 rounded-full shadow-sm">
+            <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-teal-500" />
             </span>
-            <span className="text-[11px] font-bold text-teal-700 tracking-[0.14em] uppercase">Live Route Tracking</span>
+            <span className="text-[12px] font-bold text-teal-700 tracking-[0.16em] uppercase">Live Route Tracking</span>
           </div>
 
           {/* Headline */}
-          <h1 className="ht font-extrabold text-slate-900 leading-[1.1] tracking-tight text-[3.4rem] lg:text-[3.8rem] xl:text-[4.2rem]">
-            Trucking<br />
-            Automation<br />
-            <span className="text-slate-500 font-medium text-[2rem] lg:text-[2.2rem] xl:text-[2.5rem] tracking-normal leading-snug block mt-3">
-              That works for you.
-            </span>
-          </h1>
+          <div className="flex flex-col gap-6">
+            <h1 className="ht font-extrabold text-slate-900 leading-[1.05] tracking-tight text-[3.6rem] lg:text-[4.2rem] xl:text-[4.8rem]">
+              Trucking<br />
+              Automation<br />
+              <span className="text-slate-500 font-medium text-[2.2rem] lg:text-[2.6rem] xl:text-[2.8rem] tracking-normal leading-snug block mt-5">
+                That works for you.
+              </span>
+            </h1>
 
-          {/* Description */}
-          <div className="ht space-y-2 max-w-[420px] mt-2">
-            <p className="text-[1.05rem] lg:text-[1.1rem] text-slate-500 leading-relaxed font-medium">
-              Generate your trip logs automatically with whole trip automation.
-            </p>
-            <p className="text-[1.05rem] lg:text-[1.1rem] text-slate-500 leading-relaxed font-medium">
-              Just put your locations.
-            </p>
+            {/* Description */}
+            <div className="ht space-y-4 max-w-[460px] mt-4">
+              <p className="text-[1.1rem] lg:text-[1.2rem] text-slate-500 leading-relaxed font-medium">
+                Generate your trip logs automatically with whole trip automation.
+              </p>
+              <p className="text-[1.1rem] lg:text-[1.2rem] text-slate-500 leading-relaxed font-medium">
+                Just put your locations.
+              </p>
+            </div>
           </div>
 
           {/* CTA row */}
-          <div className="ht flex items-center gap-6 mt-4">
+          <div className="ht flex flex-wrap items-center gap-8 mt-6">
             <button
               onClick={() => navigate('/trip')}
-              className="group flex items-center gap-3 bg-slate-900 text-white pl-8 pr-2.5 py-2.5 rounded-full text-[0.95rem] font-bold hover:bg-slate-800 hover:shadow-2xl hover:shadow-slate-200 transition-all active:scale-95 ease-out duration-300"
+              className="group flex items-center gap-4 bg-slate-900 text-white pl-10 pr-3 py-3 rounded-full text-[1rem] font-bold hover:bg-slate-800 hover:shadow-2xl hover:shadow-slate-200 transition-all active:scale-95 ease-out duration-300"
             >
               Get Started
-              <span className="w-9 h-9 rounded-full bg-teal-500 flex items-center justify-center group-hover:bg-teal-400 transition-colors flex-shrink-0 shadow-sm">
-                <ChevronRight className="w-5 h-5 text-white" />
+              <span className="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center group-hover:bg-teal-400 transition-colors flex-shrink-0 shadow-sm">
+                <ChevronRight className="w-6 h-6 text-white" />
               </span>
             </button>
-            <button className="group flex items-center gap-2 bg-teal-500 text-white px-6 py-2.5 rounded-full text-[0.95rem] font-bold hover:bg-teal-600 hover:shadow-2xl hover:shadow-teal-300 transition-all active:scale-95 ease-out duration-300">
-              Watch demo <PlayCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <button className="group flex items-center gap-3 bg-teal-500 text-white px-8 py-3 rounded-full text-[1rem] font-bold hover:bg-teal-600 hover:shadow-2xl hover:shadow-teal-300 transition-all active:scale-95 ease-out duration-300">
+              Watch demo <PlayCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
             </button>
           </div>
-
 
         </div>
 
