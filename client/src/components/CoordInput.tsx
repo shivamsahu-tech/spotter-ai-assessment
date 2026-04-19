@@ -56,14 +56,21 @@ function MapRecenter({ lat, lng, zoom }) {
 
 function LocationPicker({ initialValue, onSelect, onClose, title }) {
   const [marker, setMarker] = useState(initialValue ? [initialValue[1], initialValue[0]] : null)
-  const [centerMapCoords, setCenterMapCoords] = useState(initialValue ? [initialValue[1], initialValue[0]] : [39.82, -98.57])
-  const [mapZoom, setMapZoom] = useState(initialValue ? 14 : 4)
+  const [centerMapCoords, setCenterMapCoords] = useState(initialValue ? [initialValue[1], initialValue[0]] : [20, 0])
+  const [mapZoom, setMapZoom] = useState(initialValue ? 14 : 2)
 
-  function ClickHandler() {
+  function MapEvents() {
     useMapEvents({
       click(e) {
         setMarker([e.latlng.lat, e.latlng.lng])
       },
+      moveend(e) {
+        const center = e.target.getCenter()
+        setCenterMapCoords([center.lat, center.lng])
+      },
+      zoomend(e) {
+        setMapZoom(e.target.getZoom())
+      }
     })
     return null
   }
@@ -103,7 +110,7 @@ function LocationPicker({ initialValue, onSelect, onClose, title }) {
               attribution='&copy; OpenStreetMap'
             />
             <MapResizer />
-            <ClickHandler />
+            <MapEvents />
             <MapRecenter lat={centerMapCoords[0]} lng={centerMapCoords[1]} zoom={mapZoom} />
             {marker && <Marker position={marker} />}
           </MapContainer>

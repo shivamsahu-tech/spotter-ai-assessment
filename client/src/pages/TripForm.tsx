@@ -20,17 +20,7 @@ export default function TripForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setCurrCoords([position.coords.longitude, position.coords.latitude])
-        },
-        null,
-        { enableHighAccuracy: true }
-      )
-    }
-  }, [])
+
 
   const handleParamChange = (e) => {
     setParams((p) => ({ ...p, [e.target.name]: parseFloat(e.target.value) }))
