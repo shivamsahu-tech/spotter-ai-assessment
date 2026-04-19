@@ -16,43 +16,51 @@ The project follows a decoupled Client-Server architecture designed for high-per
 
 ---
 
-## 🧠 Core Engineering Components
+## 🧩 Deep Dive: The Algorithm Flow
 
-### 1. The HOS Engine (`hos_calculator.py`)
-At the heart of the system is a deterministic state machine that simulates a driver's journey. 
-- **State Tracking**: Monitors `duty_left`, `driving_left`, `cycle_left`, and `time_since_break` in real-time.
-- **Event-Driven Simulation**: Instead of fixed-step increments, the engine calculates the "time to next limiting event" (e.g., fuel need, mandatory rest, or destination arrival), ensuring O(n) efficiency.
-- **Rules Integrated**:
-  - 11-Hour Driving Limit
-  - 14-Hour On-Duty Limit
-  - 30-Minute Mandatory Rest after 8 hours
-  - 10-Hour Sleep Reset
-  - 34-Hour Weekly Cycle Restart
+The system operates on a four-stage pipeline that transforms raw geographic coordinates into a fully geocoded, FMCSA-compliant PDF logbook.
 
-### 2. Geographic Interpolation (`geo_trip.py`)
-The system bridges the gap between chronological logs and geographic paths.
-- **GPS Mapping**: Takes the high-resolution route geometry (Polyline) from OpenRouteService.
-- **Kinematic Projection**: Projects the time-based status transitions onto exact GPS coordinates by interpolating distance-over-time along the path segments.
+### 1. Stage 1: Route Acquisition (`fetch_route_data.py`)
+- **Engine**: OpenRouteService (ORS) API.
+- **Logic**: The system specifically requests `driving-hgv` (Heavy Goods Vehicle) profiles. This is critical as it ensures the route geometry respects truck-legal roads and height/weight restrictions.
+- **Output**: Retrieves a high-resolution GPS polyline and precise segment distances between the three key waypoints (Origin, Pickup, Drop-off).
 
-### 3. PDF Rendering Pipeline (`logbook_pdf.py`)
-Generates production-grade ELD logbooks.
-- **Grid Calibration**: Uses absolute coordinate mapping to draw HOS status lines onto a standard logbook grid template.
-- **Dynamic Headers**: Automatically populates carrier info, vehicle IDs, and reverse-geocoded location strings for every status change.
+### 2. Stage 2: HOS Discrete-Event Simulation (`hos_calculator.py`)
+- **Concept**: Instead of a time-step simulation (which is computationally expensive), it uses a **bottleneck-aware discrete-event simulation**.
+- **Process**: At each step, the engine calculates the *time to the next limiting boundary*:
+  - How long until I reach the pickup?
+  - How long until I must take a mandatory 30-min break (8-hour rule)?
+  - How long until I run out of driving time (11-hour rule)?
+  - How long until I run out of daily duty time (14-hour rule)?
+- **Advancement**: The simulation "jumps" to the earliest of these events, logs the status change, updates all internal timers, and iterates until the final delivery.
+
+### 3. Stage 3: Kinematic GPS Pinning (`geo_trip.py`)
+- **Problem**: HOS logs are temporal (Time -> Status), but ELD compliance requires spatial data (Status -> Location).
+- **Algorithm**: Kinematic Linear Interpolation.
+- **Execution**: The system traverses the route geometry while tracking a "virtual odometer." When a status change occurs at time $T$, the algorithm:
+  1. Calculates distance $D$ covered at $T$ using the constant `speed_mph`.
+  2. Finds the segments in the route geometry where distance $D$ falls.
+  3. Uses the **Haversine formula** to calculate precise segment lengths and interpolates the exact Latitude/Longitude coordinate of the event.
+
+### 4. Stage 4: Matrix Rendering & Geocoding (`logbook_pdf.py`)
+- **Geocoding Optimizer**: For each stationary event pinned in Stage 3, the system performs a **Reverse Geocoding** call via Nominatim. To stay within rate limits, it uses an $O(1)$ spatial cache rounded to 2 decimal places (~1.1km precision), maximizing cache hits on repeated stops.
+- **Temporal Splitting**: Long events are split at the 00:00:00 boundary to generate multi-day reports.
+- **Vector Synthesis**: Maps the 24-hour timeline onto a pixel-mapped coordinate system ($X_{min}=254, X_{max}=1817$) to draw status lines and rotated text remarks onto the final PDF template.
 
 ---
 
-## 📊 Visual Logic & Architecture
+## 📊 Visual Assets & Logic
 
-### 🛠️ System Logic (Eraser.io)
-Deep dive into the sequence diagrams and logical flow of the HOS simulation.
+### 🛠️ Detailed System Logic (Eraser.io)
+Sequence diagrams and state-transition flows of the HOS simulation.
 - **[View Logic Diagram (Google Drive)](https://drive.google.com/file/d/1pEgLKufOPr_uVXw0u3OIGlmYi25yscpm/view?usp=drive_link)**
 
-### 🗺️ Map Visualization & Results
-High-fidelity route rendering with status overlays.
+### 🗺️ Map Visualization Results
+High-fidelity route rendering with interpolated status overlays.
 - **[View Map Result (Google Drive)](https://drive.google.com/file/d/13no_5x5FVMVIRUQKIdCX_4vxu1fYgL73/view?usp=drive_link)**
 
-### 📝 HOS Logbook Output
-Example of the final generated PDF logbook.
+### 📝 HOS Logbook PDF Output
+Production-grade logbook generated via the PDF pipeline.
 - **[View HOS Log Image (Google Drive)](https://drive.google.com/file/d/1GizhJswZQYIzzrBAkdYCaRWAfzFMJmgt/view?usp=drive_link)**
 
 ---
