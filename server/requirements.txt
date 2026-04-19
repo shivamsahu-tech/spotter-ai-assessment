@@ -11,3 +11,4 @@ fpdf==1.7.2
 Pillow==11.2.1
 geopy==2.4.1
 gunicorn==23.0.0
+reverse_geocoder==1.5.1

@@ -5,12 +5,13 @@ import logging
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 from fpdf import FPDF
-from geopy.geocoders import Nominatim
+import reverse_geocoder as rg
 
 logger = logging.getLogger(__name__)
 
 # --- 1. CORE UTILITIES ---
 def load_scaleable_font(size):
+# ... (rest of load_scaleable_font remains same)
     font_paths = [
         "/usr/share/fonts/truetype/open-sans/OpenSans-Regular.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
@@ -35,24 +36,29 @@ def safe_draw_text(draw, pos, text, font, color):
         # Fallback for default bitmap font which doesn't support 'anchor'
         draw.text(pos, str(text), fill=color, font=font)
 
-def get_city_state(coordinate_pair, retries=2):
-    logger.debug("get_city_state start: coordinate_pair=%s retries=%d", coordinate_pair, retries)
-    if not coordinate_pair or len(coordinate_pair) != 2: return "Unknown"
+def get_city_state(coordinate_pair):
+    """
+    Offline reverse geocoding using reverse_geocoder (rg).
+    Extremely fast (~ms) and doesn't require internet or rate limiting.
+    """
+    if not coordinate_pair or len(coordinate_pair) != 2: 
+        return "Unknown"
+    
     lon, lat = coordinate_pair
-    geolocator = Nominatim(user_agent="spotter-ai-eld-v2", timeout=10)
-    for _ in range(retries):
-        try:
-            time.sleep(1.2)
-            location = geolocator.reverse(f"{lat}, {lon}", exactly_one=True)
-            if location and location.raw.get('address'):
-                logger.debug("Geocode success: %s", location.raw.get('address'))
-                addr = location.raw['address']
-                city = addr.get('city', addr.get('town', addr.get('village', 'Unknown')))
-                state = addr.get('state', '')
-                return f"{city}, {state}" if state else city
+    try:
+        # rg.search expects a list of (lat, lon)
+        results = rg.search([(lat, lon)])
+        if not results:
             return f"{lat:.2f}, {lon:.2f}"
-        except: continue
-    return "Unknown"
+        
+        res = results[0]
+        name = res.get('name', 'Unknown')
+        admin1 = res.get('admin1', '') # State/Province
+        
+        return f"{name}, {admin1}" if admin1 else name
+    except Exception as e:
+        logger.error("Geocoding error: %s", e)
+        return f"{lat:.2f}, {lon:.2f}"
 
 # --- 2. TEMPORAL LOGIC ---
 def split_trip_by_days(trip_logs, start_dt):
