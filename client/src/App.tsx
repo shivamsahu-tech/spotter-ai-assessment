@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme, CssBaseline } from '@mui/material'
 import TripForm from './pages/TripForm'
 import MapView from './pages/MapView'
 import Home from './pages/Home'
+import KeepAlive from './components/KeepAlive'
 import './index.css'
 
 const theme = createTheme({
@@ -26,6 +27,7 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <KeepAlive />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />

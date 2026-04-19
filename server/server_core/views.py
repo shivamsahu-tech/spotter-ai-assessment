@@ -81,6 +81,11 @@ def calculate_trip(request):
 
 
 @csrf_exempt
+def health_check(request):
+    return JsonResponse({'status': 'ok', 'timestamp': datetime.now().isoformat()})
+
+
+@csrf_exempt
 def generate_logbook(request):
     if request.method == 'POST':
         try:
