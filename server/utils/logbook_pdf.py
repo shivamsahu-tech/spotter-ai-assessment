@@ -5,13 +5,14 @@ import logging
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 from fpdf import FPDF
-import reverse_geocoder as rg
+from geopy.geocoders import Nominatim
 
 logger = logging.getLogger(__name__)
 
 # --- 1. CORE UTILITIES ---
+GEOC_CACHE = {}
+
 def load_scaleable_font(size):
-# ... (rest of load_scaleable_font remains same)
     font_paths = [
         "/usr/share/fonts/truetype/open-sans/OpenSans-Regular.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
@@ -38,26 +39,38 @@ def safe_draw_text(draw, pos, text, font, color):
 
 def get_city_state(coordinate_pair):
     """
-    Offline reverse geocoding using reverse_geocoder (rg).
-    Extremely fast (~ms) and doesn't require internet or rate limiting.
+    Lightweight reverse geocoding with a memory-efficient cache.
+    Minimizes network requests to stay within Nominatim usage limits and Gunicorn timeouts.
     """
     if not coordinate_pair or len(coordinate_pair) != 2: 
         return "Unknown"
     
     lon, lat = coordinate_pair
+    # Round to 3 decimal places (~100m precision) to increase cache hits
+    cache_key = (round(lat, 3), round(lon, 3))
+    
+    if cache_key in GEOC_CACHE:
+        return GEOC_CACHE[cache_key]
+
+    geolocator = Nominatim(user_agent="spotter-ai-eld-v2", timeout=5)
     try:
-        # rg.search expects a list of (lat, lon)
-        results = rg.search([(lat, lon)])
-        if not results:
-            return f"{lat:.2f}, {lon:.2f}"
+        # Rate limit compliance: Only sleep on a fresh cache miss
+        time.sleep(1.2) 
+        location = geolocator.reverse(f"{lat}, {lon}", exactly_one=True)
         
-        res = results[0]
-        name = res.get('name', 'Unknown')
-        admin1 = res.get('admin1', '') # State/Province
+        if location and location.raw.get('address'):
+            addr = location.raw['address']
+            city = addr.get('city', addr.get('town', addr.get('village', addr.get('suburb', 'Unknown'))))
+            state = addr.get('state', '')
+            result = f"{city}, {state}" if state else city
+            GEOC_CACHE[cache_key] = result
+            return result
         
-        return f"{name}, {admin1}" if admin1 else name
+        fallback = f"{lat:.2f}, {lon:.2f}"
+        GEOC_CACHE[cache_key] = fallback
+        return fallback
     except Exception as e:
-        logger.error("Geocoding error: %s", e)
+        logger.warning("Geocoding error: %s", e)
         return f"{lat:.2f}, {lon:.2f}"
 
 # --- 2. TEMPORAL LOGIC ---

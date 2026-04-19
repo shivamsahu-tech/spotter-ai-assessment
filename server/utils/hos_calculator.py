@@ -54,15 +54,8 @@ def calculate_hos_logs(
             state['driving_left'] = 11.0
             state['time_since_break'] = 0.0
             continue
-            
-        if state['duty_left'] <= 0.001 or state['driving_left'] <= 0.001:
-            log_event("Sleeper Berth", 10.0, "10-Hour Reset")
-            state['duty_left'] = 14.0
-            state['driving_left'] = 11.0
-            state['time_since_break'] = 0.0
-            continue
-            
-        if state['dist_since_fuel'] >= 1000.0:
+
+        if state['dist_since_fuel'] >= 999.0:
             log_event("On Duty (Not Driving)", 0.5, "Fueling")
             state['duty_left'] -= 0.5
             state['cycle_left'] -= 0.5
@@ -76,6 +69,15 @@ def calculate_hos_logs(
             state['duty_left'] -= 0.5
             state['time_since_break'] = 0.0
             continue
+            
+        if state['duty_left'] <= 0.001 or state['driving_left'] <= 0.001:
+            log_event("Sleeper Berth", 10.0, "10-Hour Reset")
+            state['duty_left'] = 14.0
+            state['driving_left'] = 11.0
+            state['cycle_left'] -= 10
+            state['time_since_break'] = 0.0
+            continue
+            
 
         # 4. Calculate time to every possible stopping condition
         time_to_pickup = onloading_distance / speed_mph

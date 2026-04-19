@@ -41,15 +41,19 @@ export default function LogTimeline({ logs }) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-base leading-none">{s.icon}</span>
-                      <span className={`text-xs font-bold ${s.text}`}>{log.status}</span>
+                      <span className="text-xs font-bold text-slate-900 leading-tight">
+                        {log.reason || log.status}
+                      </span>
                     </div>
                     <span className="text-xs font-bold text-slate-900 whitespace-nowrap">
                       {log.duration_hours.toFixed(2)}h
                     </span>
                   </div>
-                  {log.reason ? (
-                    <p className="text-[11px] text-slate-600 font-medium mt-1.5 ml-7">{log.reason}</p>
-                  ) : null}
+                  {log.reason && (
+                    <span className={`text-[10px] font-bold ${s.text} ml-7 mt-1 block uppercase tracking-wider`}>
+                      {log.status}
+                    </span>
+                  )}
                   {log.coordinate ? (
                     <p className="text-[10px] font-mono text-slate-500 mt-1 ml-7">
                       {log.coordinate[1].toFixed(4)}, {log.coordinate[0].toFixed(4)}
