@@ -1,0 +1,25 @@
+# Node modules
+client/node_modules/
+node_modules/
+
+# Python Virtual Environments
+server/venv/
+venv/
+env/
+.env
+
+# MacOS
+.DS_Store
+
+# Django
+server/db.sqlite3
+*.pyc
+__pycache__/
+
+# Logs / Temp
+*.log
+/tmp/
+
+# Build folders
+client/dist/
+client/build/

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { Loader2 } from 'lucide-react';
 
 // --- UTILITY FUNCTIONS ---
 
@@ -50,8 +51,17 @@ export default function ELDLogbook({
   initialStartDate?: string;
   initialStartHour?: number;
 }) {
+  initialStartHour?: number;
+}) {
   const [startHour, setStartHour] = useState<number>(initialStartHour);
   const [startDate, setStartDate] = useState<string>(initialStartDate);
+
+  // Form State
+  const [truckNumber, setTruckNumber] = useState('TRK-902');
+  const [carrierName, setCarrierName] = useState('Dummy Carrier Inc');
+  const [officeAddress, setOfficeAddress] = useState('1234 Dummy St, Seattle');
+  const [homeTerminal, setHomeTerminal] = useState('Terminal A, Seattle');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Helper to get correct date string for each day page
   const getFormattedDate = (baseDateStr: string, offsetDays: number) => {
@@ -138,46 +148,132 @@ export default function ELDLogbook({
     return points.join(" ");
   };
 
+  const handleDownloadPDF = async () => {
+    try {
+      setIsGenerating(true);
+
+      const f_coord = flatLogs[0]?.coordinate || [-118.24, 34.05];
+      const t_coord = flatLogs[flatLogs.length - 1]?.coordinate || [-112.07, 33.44];
+
+      const endHour = (startHour + 24) % 24; // Approximation for end time
+
+      const payload = {
+        trip_logs: flatLogs,
+        speed: speedMph,
+        truck: truckNumber,
+        carrier: carrierName,
+        office: officeAddress,
+        home: homeTerminal,
+        from_coord: f_coord,
+        to_coord: t_coord,
+        start_time: new Date(`${startDate}T${startHour.toString().padStart(2, '0')}:00:00Z`).toISOString()
+      };
+
+      const res = await fetch('http://localhost:8000/api/generate-logbook/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'logbook.pdf';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate PDF. Make sure server is running.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-12">
       
       {/* USER CONTROL PANEL */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800">Trip Log Generator</h2>
-          <p className="text-slate-500 text-sm">Review logs and export as PDF.</p>
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between gap-4 print:hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">Trip Log Generator</h2>
+            <p className="text-slate-500 text-sm">Review logs and export as PDF.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="font-semibold text-slate-700">Date:</label>
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={e => setStartDate(e.target.value)} 
+                className="border-2 border-slate-300 rounded-md p-2 bg-slate-50 focus:border-teal-500 focus:ring-0 font-mono outline-none" 
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="font-semibold text-slate-700">Time:</label>
+              <select 
+                value={startHour} 
+                onChange={(e) => setStartHour(Number(e.target.value))}
+                className="border-2 border-slate-300 rounded-md p-2 bg-slate-50 focus:border-teal-500 focus:ring-0 font-mono outline-none"
+              >
+                {[...Array(24)].map((_, i) => (
+                  <option key={i} value={i}>
+                    {i === 0 ? 'Midnight (00:00)' : i === 12 ? 'Noon (12:00)' : `${i.toString().padStart(2, '0')}:00`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <label className="font-semibold text-slate-700">Date:</label>
-            <input 
-              type="date" 
-              value={startDate} 
-              onChange={e => setStartDate(e.target.value)} 
-              className="border-2 border-slate-300 rounded-md p-2 bg-slate-50 focus:border-teal-500 focus:ring-0 font-mono outline-none" 
-            />
+
+        {/* LOGBOOK METADATA FORM */}
+        <div className="border-t border-slate-200 pt-4 mt-2">
+          <h3 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wider">Logbook Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">Truck Number</label>
+              <input type="text" value={truckNumber} onChange={(e) => setTruckNumber(e.target.value)} className="w-full border-2 border-slate-300 rounded-md p-2 bg-slate-50 outline-none focus:border-teal-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">Carrier Name</label>
+              <input type="text" value={carrierName} onChange={(e) => setCarrierName(e.target.value)} className="w-full border-2 border-slate-300 rounded-md p-2 bg-slate-50 outline-none focus:border-teal-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">Office Address</label>
+              <input type="text" value={officeAddress} onChange={(e) => setOfficeAddress(e.target.value)} className="w-full border-2 border-slate-300 rounded-md p-2 bg-slate-50 outline-none focus:border-teal-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-600 mb-1">Home Terminal</label>
+              <input type="text" value={homeTerminal} onChange={(e) => setHomeTerminal(e.target.value)} className="w-full border-2 border-slate-300 rounded-md p-2 bg-slate-50 outline-none focus:border-teal-500" />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="font-semibold text-slate-700">Time:</label>
-            <select 
-              value={startHour} 
-              onChange={(e) => setStartHour(Number(e.target.value))}
-              className="border-2 border-slate-300 rounded-md p-2 bg-slate-50 focus:border-teal-500 focus:ring-0 font-mono outline-none"
-            >
-              {[...Array(24)].map((_, i) => (
-                <option key={i} value={i}>
-                  {i === 0 ? 'Midnight (00:00)' : i === 12 ? 'Noon (12:00)' : `${i.toString().padStart(2, '0')}:00`}
-                </option>
-              ))}
-            </select>
+
+          <div className="flex justify-end pt-2">
+            {!isGenerating ? (
+              <button 
+                onClick={handleDownloadPDF} 
+                className="bg-slate-800 text-white px-6 py-2 rounded-md font-bold hover:bg-slate-900 transition-colors shadow-sm"
+              >
+                Download PDF
+              </button>
+            ) : (
+              <div className="flex items-center gap-3 bg-teal-50 text-teal-800 border border-teal-200 px-4 py-2 rounded-md shadow-sm">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <div className="text-sm">
+                  <p className="font-bold">Generating PDF...</p>
+                  <p className="text-teal-600 text-xs">This may take a minute due to reverse geocoding & mapping endpoints.</p>
+                </div>
+              </div>
+            )}
           </div>
-          <button 
-            onClick={() => window.print()} 
-            className="bg-slate-800 text-white px-4 py-2 rounded-md font-bold hover:bg-slate-900 transition-colors shadow-sm ml-auto md:ml-0"
-          >
-            Export as PDF
-          </button>
         </div>
       </div>
 
