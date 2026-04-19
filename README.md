@@ -10,9 +10,8 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
 [![OpenRouteService](https://img.shields.io/badge/Routing-ORS-FF5733.svg)](https://openrouteservice.org/)
 
-[Live Url](https://spotterai-assessment.vercel.app/) • 
-[Watch Demo](https://drive.google.com/file/d/1kens_EKfJ0HlV8tKVS_pBF4fv9n5zS0F/view?usp=sharing) • [🚀 Quick Start](#-installation--setup) • [🏗️ Architecture](#-system-architecture)
-
+[Live Link](https://spotterai-assessment.vercel.app/) • 
+[Watch Video](https://drive.google.com/file/d/1kens_EKfJ0HlV8tKVS_pBF4fv9n5zS0F/view?usp=sharing) 
 
 ---
 
@@ -21,6 +20,8 @@
 </div>
 
 ---
+
+[Note: The project is currently deployed on Render's free tier, so high-load tasks, like generating logbooks for more than four days might fail. While building the logic, I made a few assumptions, such as not drawing a line on the logbook after a trip is completed. Truly, this assessment was a great experience to learn about how the logistics industry works.]
 
 ## ✨ Key Features
 * **FMCSA-Compliant HOS Engine:** A highly optimized state machine that dynamically calculates 11-hour driving limits, 14-hour consecutive duty windows, 70-hour cycle limits, and mandatory overlapping rest breaks.
