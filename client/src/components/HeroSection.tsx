@@ -148,9 +148,14 @@ export default function HeroSection() {
                 <ChevronRight className="w-6 h-6 text-white" />
               </span>
             </button>
-            <button className="group flex items-center gap-3 bg-teal-500 text-white px-8 py-3 rounded-full text-[1rem] font-bold hover:bg-teal-600 hover:shadow-2xl hover:shadow-teal-300 transition-all active:scale-95 ease-out duration-300">
-              Watch demo <PlayCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            </button>
+            <a
+              href="https://drive.google.com/file/d/1kens_EKfJ0HlV8tKVS_pBF4fv9n5zS0F/view?usp=sharing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-3 bg-teal-500 text-white px-8 py-3 rounded-full text-[1rem] font-bold hover:bg-teal-600 hover:shadow-2xl hover:shadow-teal-300 transition-all active:scale-95 ease-out duration-300"
+            >
+              Watch Video <PlayCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            </a>
           </div>
 
         </div>

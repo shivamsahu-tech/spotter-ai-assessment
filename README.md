@@ -11,7 +11,7 @@
 [![OpenRouteService](https://img.shields.io/badge/Routing-ORS-FF5733.svg)](https://openrouteservice.org/)
 
 [Live Url](https://spotterai-assessment.vercel.app/) • 
-[Loom Video](https://spotterai-assessment.vercel.app/) • [🚀 Quick Start](#-installation--setup) • [🏗️ Architecture](#-system-architecture)
+[Watch Demo](https://drive.google.com/file/d/1kens_EKfJ0HlV8tKVS_pBF4fv9n5zS0F/view?usp=sharing) • [🚀 Quick Start](#-installation--setup) • [🏗️ Architecture](#-system-architecture)
 
 
 ---
@@ -132,3 +132,7 @@ npm run dev
 
 ---
 *Created for the Spotter AI Technical Assessment.*
+
+## 👤 Author
+- **Resume**: [Shivam Sahu - Resume](https://drive.google.com/file/d/1HYMqvdECJpRh4eCLIltPNlbZT5c0suK8/view?usp=drive_link)
+- **GitHub**: [@shivamsahu-tech](https://github.com/shivamsahu-tech)
