@@ -1,54 +1,85 @@
-# Spotter AI - Intelligent ELD Trip Planner & HOS Calculator
+# Spotter AI: Technical Architecture & Design
 
-Spotter AI is a premium, automated route-logging and Hours of Service (HOS) management platform designed for the modern trucking industry. It streamlines the creation of ELD-compliant logbooks through intelligent route planning and automatic status generation.
+Spotter AI is an advanced ELD (Electronic Logging Device) trip planning platform that automates the generation of FMCSA-compliant logbooks using geographic interpolation and a custom HOS (Hours of Service) state machine.
 
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-black?logo=github)](https://github.com/shivamsahu-tech/spotter-ai-assessment)
 
-## 🚀 Key Features
+---
 
-- **🚛 Automated Route Logs**: Generate complete trip logs with zero manual data entry. Just input your coordinates and the engine handles the rest.
-- **🗺️ Intelligent Waypoint Picking**: Interactive map interface for setting current location, pickup, and drop-off points.
-- **⚖️ Precise HOS Calculation**: Built-in engine that calculates driving time, on-duty/off-duty cycles, and sleeper berth requirements.
-- **📄 ELD-Ready PDF Generation**: Instantly generate professional, compliant ELD logbook PDFs with reverse-geocoded location data.
-- **✨ Premium Visualized Dashboards**: High-fidelity map views with route geometry, fuel stops, and animated route progress.
+## 🏗️ System Architecture
+
+The project follows a decoupled Client-Server architecture designed for high-performance geographic processing and professional document rendering.
+
+### 🌐 Architecture Overview
+- **Frontend**: A high-fidelity React 19 application optimized for geographic visualization and kinematic UI interactions.
+- **Backend**: A Django 6.0 REST API housing the core HOS logic and PDF generation pipeline.
+
+---
+
+## 🧠 Core Engineering Components
+
+### 1. The HOS Engine (`hos_calculator.py`)
+At the heart of the system is a deterministic state machine that simulates a driver's journey. 
+- **State Tracking**: Monitors `duty_left`, `driving_left`, `cycle_left`, and `time_since_break` in real-time.
+- **Event-Driven Simulation**: Instead of fixed-step increments, the engine calculates the "time to next limiting event" (e.g., fuel need, mandatory rest, or destination arrival), ensuring O(n) efficiency.
+- **Rules Integrated**:
+  - 11-Hour Driving Limit
+  - 14-Hour On-Duty Limit
+  - 30-Minute Mandatory Rest after 8 hours
+  - 10-Hour Sleep Reset
+  - 34-Hour Weekly Cycle Restart
+
+### 2. Geographic Interpolation (`geo_trip.py`)
+The system bridges the gap between chronological logs and geographic paths.
+- **GPS Mapping**: Takes the high-resolution route geometry (Polyline) from OpenRouteService.
+- **Kinematic Projection**: Projects the time-based status transitions onto exact GPS coordinates by interpolating distance-over-time along the path segments.
+
+### 3. PDF Rendering Pipeline (`logbook_pdf.py`)
+Generates production-grade ELD logbooks.
+- **Grid Calibration**: Uses absolute coordinate mapping to draw HOS status lines onto a standard logbook grid template.
+- **Dynamic Headers**: Automatically populates carrier info, vehicle IDs, and reverse-geocoded location strings for every status change.
+
+---
+
+## 📊 Visual Logic & Architecture
+
+### 🛠️ System Logic (Eraser.io)
+Deep dive into the sequence diagrams and logical flow of the HOS simulation.
+- **[View Logic Diagram (Google Drive)](https://drive.google.com/file/d/1pEgLKufOPr_uVXw0u3OIGlmYi25yscpm/view?usp=drive_link)**
+
+### 🗺️ Map Visualization & Results
+High-fidelity route rendering with status overlays.
+- **[View Map Result (Google Drive)](https://drive.google.com/file/d/13no_5x5FVMVIRUQKIdCX_4vxu1fYgL73/view?usp=drive_link)**
+
+### 📝 HOS Logbook Output
+Example of the final generated PDF logbook.
+- **[View HOS Log Image (Google Drive)](https://drive.google.com/file/d/1GizhJswZQYIzzrBAkdYCaRWAfzFMJmgt/view?usp=drive_link)**
 
 ---
 
 ## 🛠️ Technology Stack
 
-### Frontend
-- **Framework**: [React 19](https://react.dev/) (Vite)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Animations**: [GSAP](https://greensock.com/gsap/) (GreenSock Animation Platform)
-- **Mapping**: [Leaflet](https://leafletjs.com/) & [React Leaflet](https://react-leaflet.js.org/)
-- **UI Components**: [Material UI](https://mui.com/) & [Tailwind CSS](https://tailwindcss.com/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-
-### Backend
-- **Framework**: [Django 6.0](https://www.djangoproject.com/)
-- **PDF Engine**: [fpdf](http://www.fpdf.org/) & [Pillow](https://python-pillow.org/)
-- **Geolocation**: [GeoPy](https://geopy.readthedocs.io/)
-- **Database**: SQLite (Development)
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 19, TypeScript, GSAP, Leaflet, Tailwind CSS, Material UI |
+| **Backend** | Django 6.0, GeoPy, FPDF, Pillow, OpenRouteService API |
+| **Infrastructure** | SQLite, Gunicorn, Vite |
 
 ---
 
 ## 📦 Installation & Setup
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-
-### 1. Server Setup (Django)
+### 1. Backend Setup
 ```bash
 cd server
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
 
-### 2. Client Setup (Vite + React)
+### 2. Frontend Setup
 ```bash
 cd client
 npm install
@@ -57,24 +88,8 @@ npm run dev
 
 ---
 
-## 📸 visual Preview
-
-### Professional ELD Logbook
-The system generates in-depth, compliant logs with full geographic resolution.
-
-![Perfect Logbook Example](server/perfect_log.png)
-
-### Automated Workflow
-From route planning to PDF generation, the entire workflow is handled automatically.
-
-![Logbook Preview](server/logbook.png)
-
----
-
 ## 🔗 Project Links
-
 - **Repository**: [shivamsahu-tech/spotter-ai-assessment](https://github.com/shivamsahu-tech/spotter-ai-assessment)
 
-
-## 📝 License
-This project is for assessment purposes. Refer to the repository for licensing information.
+---
+*Created for the Spotter AI Technical Assessment.*
