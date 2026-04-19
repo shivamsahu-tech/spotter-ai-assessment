@@ -49,19 +49,20 @@ The system operates on a four-stage pipeline that transforms raw geographic coor
 
 ---
 
-## 📊 Visual Assets & Logic
+## 📊 Visual Logic & Architecture
 
-### 🛠️ Detailed System Logic (Eraser.io)
-Sequence diagrams and state-transition flows of the HOS simulation.
+### 🛠️ System Logic (Eraser.io)
+Deep dive into the sequence diagrams and logical flow of the HOS simulation.
 - **[View Logic Diagram (Google Drive)](https://drive.google.com/file/d/1pEgLKufOPr_uVXw0u3OIGlmYi25yscpm/view?usp=drive_link)**
 
-### 🗺️ Map Visualization Results
-High-fidelity route rendering with interpolated status overlays.
+### 🗺️ Map Visualization & Results
+High-fidelity route rendering with status overlays.
 - **[View Map Result (Google Drive)](https://drive.google.com/file/d/13no_5x5FVMVIRUQKIdCX_4vxu1fYgL73/view?usp=drive_link)**
 
-### 📝 HOS Logbook PDF Output
-Production-grade logbook generated via the PDF pipeline.
+### 📝 HOS Logbook Output
+Example of the final generated PDF logbook.
 - **[View HOS Log Image (Google Drive)](https://drive.google.com/file/d/1GizhJswZQYIzzrBAkdYCaRWAfzFMJmgt/view?usp=drive_link)**
+
 
 ---
 
