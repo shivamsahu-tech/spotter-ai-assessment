@@ -51,8 +51,6 @@ export default function ELDLogbook({
   initialStartDate?: string;
   initialStartHour?: number;
 }) {
-  initialStartHour?: number;
-}) {
   const [startHour, setStartHour] = useState<number>(initialStartHour);
   const [startDate, setStartDate] = useState<string>(initialStartDate);
 

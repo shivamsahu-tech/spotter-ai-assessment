@@ -23,3 +23,7 @@ __pycache__/
 # Build folders
 client/dist/
 client/build/
+
+# IDEs
+.vscode/
+.idea/
